@@ -2,6 +2,7 @@
 
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { extractComplaintData } from "@/lib/gemini/extract-complaint";
 
 export type FileComplaintState = { error: string | null };
 
@@ -105,6 +106,34 @@ export async function fileComplaint(
         evidenceInsertError
       );
     }
+  }
+
+  // AI extraction runs after the complaint is safely saved, and its failure
+  // (missing key, network error, bad response) must never block filing --
+  // extractComplaintData already swallows its own errors and returns null.
+  const extractedData = await extractComplaintData(title, description);
+
+  if (extractedData) {
+    console.log(
+      `[fileComplaint] AI extraction for complaint ${complaint.id}:`,
+      JSON.stringify(extractedData, null, 2)
+    );
+
+    const { error: extractedDataUpdateError } = await supabase
+      .from("complaints")
+      .update({ extracted_data: extractedData })
+      .eq("id", complaint.id);
+
+    if (extractedDataUpdateError) {
+      console.error(
+        `[fileComplaint] Extracted data but failed to save it on complaint ${complaint.id}:`,
+        extractedDataUpdateError
+      );
+    }
+  } else {
+    console.log(
+      `[fileComplaint] No AI extraction available for complaint ${complaint.id} (see logs above for why).`
+    );
   }
 
   redirect("/civilian/dashboard?filed=1");

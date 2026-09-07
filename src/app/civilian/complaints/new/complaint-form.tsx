@@ -17,7 +17,7 @@ export function ComplaintForm() {
       <div className="w-full max-w-2xl">
         <Link
           href="/civilian/dashboard"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted hover:text-foreground"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to dashboard
@@ -86,7 +86,7 @@ export function ComplaintForm() {
                   onChange={(e) =>
                     setSelectedFiles(Array.from(e.target.files ?? []))
                   }
-                  className="w-full text-sm text-muted file:mr-3 file:rounded-md file:border-0 file:bg-warm-accent/15 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-warm-accent hover:file:bg-warm-accent/25"
+                  className="w-full text-sm text-muted file:mr-3 file:rounded-md file:border-0 file:bg-warm-accent/15 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-warm-accent file:transition-colors hover:file:bg-warm-accent/25"
                 />
               </div>
               {selectedFiles.length > 0 && (
@@ -108,7 +108,7 @@ export function ComplaintForm() {
             </label>
 
             {state.error && (
-              <p className="flex items-center gap-2 rounded-lg border border-priority-high/30 bg-priority-high/10 px-3 py-2 text-sm text-priority-high">
+              <p className="pop-in flex items-center gap-2 rounded-lg border border-priority-high/30 bg-priority-high/10 px-3 py-2 text-sm text-priority-high">
                 <X className="h-4 w-4 shrink-0" />
                 {state.error}
               </p>
@@ -119,9 +119,14 @@ export function ComplaintForm() {
               disabled={pending}
               className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-warm-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-warm-accent/90 disabled:opacity-60"
             >
-              {pending && <Loader2 className="h-4 w-4 animate-spin" />}
-              Submit complaint
+              {pending && <Loader2 className="fade-in h-4 w-4 shrink-0 animate-spin" />}
+              {pending ? "Filing complaint & analyzing details..." : "Submit complaint"}
             </button>
+            {pending && (
+              <p className="fade-in text-center text-xs text-muted">
+                This can take up to 30 seconds while our AI reviews the details.
+              </p>
+            )}
           </form>
         </div>
       </div>

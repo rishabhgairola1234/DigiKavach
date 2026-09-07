@@ -38,7 +38,7 @@ export default function OfficerLoginPage() {
           />
 
           {state.error && (
-            <p className="rounded-lg border border-priority-high/30 bg-priority-high/10 px-3 py-2 text-sm text-priority-high">
+            <p className="pop-in rounded-lg border border-priority-high/30 bg-priority-high/10 px-3 py-2 text-sm text-priority-high">
               {state.error}
             </p>
           )}
@@ -48,7 +48,7 @@ export default function OfficerLoginPage() {
             disabled={pending}
             className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-strong disabled:opacity-60"
           >
-            {pending && <Loader2 className="h-4 w-4 animate-spin" />}
+            {pending && <Loader2 className="fade-in h-4 w-4 animate-spin" />}
             Log in
           </button>
         </form>
@@ -59,7 +59,7 @@ export default function OfficerLoginPage() {
         </p>
         <Link
           href="/"
-          className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted hover:text-foreground"
+          className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to home

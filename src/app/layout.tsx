@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "DigiAstra",
+  title: "DigiKavach",
   description: "Crime investigation & complaint platform",
 };
 

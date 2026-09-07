@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* DigiAstra core palette — deep navy/slate + electric cyan */
+  /* DigiKavach core palette — deep navy/slate + electric cyan */
   --background: #0f172a;
   --background-elevated: #141d35;
   --foreground: #e2e8f0;
@@ -37,6 +37,17 @@
   --font-sans: var(--font-inter);
 }
 
+/* Every Tailwind transition utility in the app (transition-colors,
+   transition-all, transition-transform, ...) falls back to these two tokens
+   whenever it isn't paired with an explicit duration or ease utility. Setting
+   them once here is what makes every hover/press state across the whole app
+   share the same "subtle, professional" 200ms ease-out feel by default --
+   new components get it for free, nothing to remember per-component. */
+@theme {
+  --default-transition-duration: 200ms;
+  --default-transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -48,4 +59,78 @@ body {
     linear-gradient(to right, rgba(148, 163, 184, 0.06) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(148, 163, 184, 0.06) 1px, transparent 1px);
   background-size: 40px 40px;
+}
+
+/* SOS button: the one deliberate break from the navy/cyan/orange palette --
+   a soft radiating ring to draw the eye without being a flashing/strobing
+   effect. */
+@keyframes sos-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 22px rgba(239, 68, 68, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+  }
+}
+
+.sos-pulse {
+  animation: sos-pulse 2.2s ease-out infinite;
+}
+
+/* Shared entrance transitions -- used everywhere something appears instead of
+   snapping into existence: page navigations, popped-in cards/messages, and
+   loading indicators. Kept to two variants so motion stays consistent across
+   the app rather than each component inventing its own timing. */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fade-in 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.pop-in {
+  animation: pop-in 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+/* Wraps every page's content (see app/template.tsx) so navigating between
+   routes fades the new page in instead of an instant hard cut. Next.js
+   remounts `template.tsx` on every navigation, which is what re-triggers this
+   animation each time -- no client-side JS or per-page work needed. */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.page-transition {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  animation: page-enter 220ms cubic-bezier(0, 0, 0.2, 1);
 }

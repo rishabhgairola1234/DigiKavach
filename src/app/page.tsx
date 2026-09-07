@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ShieldAlert, Siren, ArrowRight, Radar } from "lucide-react";
+import { ShieldAlert, Siren, ArrowRight } from "lucide-react";
 
 export default function Home() {
   return (
@@ -9,14 +9,13 @@ export default function Home() {
       <div className="pointer-events-none absolute bottom-0 right-0 h-72 w-72 rounded-full bg-accent/10 blur-[100px]" />
 
       <div className="relative z-10 flex flex-col items-center text-center">
-        <div className="mb-5 flex items-center gap-2 rounded-full border border-border bg-background-elevated px-4 py-1.5 text-xs font-medium tracking-wide text-accent-strong">
-          <Radar className="h-3.5 w-3.5" />
-          DIGIASTRA COMMAND PLATFORM
-        </div>
-        <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+        <h1 className="text-6xl font-extrabold tracking-tight text-foreground sm:text-7xl">
+          DigiKavach
+        </h1>
+        <p className="mt-3 max-w-2xl text-xl font-medium tracking-tight text-foreground sm:text-2xl">
           Crime Reporting &amp; Investigation,{" "}
           <span className="text-accent-strong">Unified</span>
-        </h1>
+        </p>
         <p className="mt-4 max-w-xl text-base leading-relaxed text-muted">
           One platform connecting citizens who need to report incidents with
           officers who investigate them — powered by AI-assisted case

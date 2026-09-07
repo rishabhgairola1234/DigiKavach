@@ -10,11 +10,9 @@ import {
   CalendarClock,
   CheckCircle2,
 } from "lucide-react";
-import {
-  COMPLAINT_STATUS_LABEL,
-  COMPLAINT_STATUS_BADGE_CLASSES,
-  type ComplaintStatus,
-} from "@/lib/complaints";
+import { StatusBadge } from "@/components/badges";
+import { SosButton } from "./sos-button";
+import type { ComplaintStatus } from "@/lib/complaints";
 
 export default async function CivilianDashboardPage({
   searchParams,
@@ -62,6 +60,10 @@ export default async function CivilianDashboardPage({
       </header>
 
       <main className="mx-auto mt-8 w-full max-w-4xl">
+        <div className="mb-8 flex flex-col items-center gap-4 rounded-2xl border border-red-500/25 bg-red-500/[0.04] px-6 py-8">
+          <SosButton />
+        </div>
+
         {filed === "1" && (
           <div className="mb-6 flex items-center gap-2 rounded-lg border border-priority-low/30 bg-priority-low/10 px-4 py-3 text-sm text-priority-low">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
@@ -109,11 +111,7 @@ export default async function CivilianDashboardPage({
                     <h3 className="font-medium text-foreground">
                       {complaint.title}
                     </h3>
-                    <span
-                      className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${COMPLAINT_STATUS_BADGE_CLASSES[status]}`}
-                    >
-                      {COMPLAINT_STATUS_LABEL[status]}
-                    </span>
+                    <StatusBadge status={status} />
                   </div>
                   <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-muted">
                     <span className="inline-flex items-center gap-1.5">
