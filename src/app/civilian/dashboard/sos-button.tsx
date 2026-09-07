@@ -92,10 +92,12 @@ export function SosButton() {
             ? "Getting your location..."
             : state === "sending"
               ? "Sending alert..."
-              : "SOS — Emergency Alert"}
+              : "SOS Alert"}
         </p>
         {state === "idle" && (
-          <p className="text-xs text-muted">Tap if you&apos;re in immediate danger</p>
+          <p className="text-xs text-muted">
+            Notifies the response team with your location
+          </p>
         )}
       </div>
 

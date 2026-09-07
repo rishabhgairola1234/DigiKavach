@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { StatusBadge } from "@/components/badges";
 import { SosButton } from "./sos-button";
+import { CallEmergencyButton } from "./call-emergency-button";
 import type { ComplaintStatus } from "@/lib/complaints";
 
 export default async function CivilianDashboardPage({
@@ -60,8 +61,9 @@ export default async function CivilianDashboardPage({
       </header>
 
       <main className="mx-auto mt-8 w-full max-w-4xl">
-        <div className="mb-8 flex flex-col items-center gap-4 rounded-2xl border border-red-500/25 bg-red-500/[0.04] px-6 py-8">
+        <div className="mb-8 flex flex-col items-center gap-8 rounded-2xl border border-red-500/25 bg-red-500/[0.04] px-6 py-8 sm:flex-row sm:items-start sm:justify-center sm:gap-14">
           <SosButton />
+          <CallEmergencyButton />
         </div>
 
         {filed === "1" && (
