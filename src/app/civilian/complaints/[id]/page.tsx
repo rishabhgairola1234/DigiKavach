@@ -68,7 +68,7 @@ export default async function ComplaintDetailPage({
       <div className="mx-auto w-full max-w-2xl">
         <Link
           href="/civilian/dashboard"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-all hover:text-foreground active:scale-[0.98]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <Bilingual en="Back to dashboard" hi="डैशबोर्ड पर वापस जाएं" />

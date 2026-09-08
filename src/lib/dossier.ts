@@ -59,6 +59,13 @@ export const ENTITY_TYPE_LABEL: Record<EntityType, string> = {
   person_name: "Person",
 };
 
+// Officer-facing bilingual label, same reasoning as COMPLAINT_STATUS_LABEL_HI
+// in lib/complaints.ts.
+export const ENTITY_TYPE_LABEL_HI: Record<EntityType, string> = {
+  vehicle_plate: "वाहन नंबर प्लेट",
+  person_name: "व्यक्ति",
+};
+
 export type DossierEntry = {
   complaintId: string;
   title: string;

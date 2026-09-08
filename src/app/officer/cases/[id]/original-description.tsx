@@ -16,7 +16,7 @@ export function OriginalDescriptionToggle({
     <div className="mt-3">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="inline-flex items-center gap-1.5 text-xs font-medium text-accent-strong transition-colors hover:text-accent"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-accent-strong transition-all hover:text-accent active:scale-[0.98]"
       >
         <Languages className="h-3.5 w-3.5" />
         {open ? "Hide original" : "View original"}

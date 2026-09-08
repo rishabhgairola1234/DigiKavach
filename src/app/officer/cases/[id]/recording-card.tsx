@@ -61,7 +61,7 @@ export function RecordingCard({ recording }: { recording: CameraRecording }) {
                 key={i}
                 onClick={() => seekTo(moment.timestamp)}
                 title={`${moment.reason} — ${moment.timestamp.toFixed(1)}s`}
-                className="group relative shrink-0 overflow-hidden rounded-md border border-border transition-colors hover:border-accent/60"
+                className="group relative shrink-0 overflow-hidden rounded-md border border-border transition-all hover:border-accent/60 active:scale-[0.98]"
               >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img

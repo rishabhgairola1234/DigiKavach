@@ -60,7 +60,7 @@ export default function CivilianLoginPage() {
           <button
             type="submit"
             disabled={pending}
-            className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-warm-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-warm-accent/90 disabled:opacity-60"
+            className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-warm-accent px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-warm-accent/90 active:scale-[0.98] disabled:opacity-60"
           >
             {pending && <Loader2 className="fade-in h-4 w-4 animate-spin" />}
             <Bilingual en="Log in" hi="लॉग इन करें" />
@@ -71,14 +71,14 @@ export default function CivilianLoginPage() {
           Don&apos;t have an account?{" "}
           <Link
             href="/civilian/signup"
-            className="font-medium text-warm-accent transition-colors hover:text-warm-accent/80"
+            className="font-medium text-warm-accent transition-all hover:text-warm-accent/80 active:scale-[0.98]"
           >
             <Bilingual en="Sign up" hi="साइन अप करें" />
           </Link>
         </p>
         <Link
           href="/"
-          className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
+          className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted transition-all hover:text-foreground active:scale-[0.98]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <Bilingual en="Back to home" hi="होम पर वापस जाएं" />

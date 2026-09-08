@@ -2,16 +2,20 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
-import { Search, Radar, MapPin, CalendarClock, User, Tag, UserCheck } from "lucide-react";
+import { Search, MapPin, CalendarClock, User, Tag, UserCheck, ChevronDown } from "lucide-react";
+import { NoCasesIllustration } from "@/components/illustrations/no-cases-illustration";
 import { StatusBadge, PriorityBadge, LinkedCasesBadge, OverdueBadge } from "@/components/badges";
 import {
   CATEGORY_LABEL,
+  CATEGORY_LABEL_HI,
   COMPLAINT_STATUS_LABEL,
+  COMPLAINT_STATUS_LABEL_HI,
   PRIORITY_SORT_RANK,
   type ComplaintCategory,
   type ComplaintStatus,
   type ExtractedComplaintData,
 } from "@/lib/complaints";
+import { Bilingual, BilingualInline } from "@/components/bilingual";
 
 export type CaseListItem = {
   id: string;
@@ -99,45 +103,53 @@ export function CaseList({
   return (
     <div>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-semibold text-foreground">
-          {assignmentFilter === "mine" ? "My Assigned Cases" : "All Cases"}{" "}
-          <span className="text-muted">({filteredCases.length})</span>
-        </h2>
+        <Bilingual
+          as="h2"
+          en={
+            <>
+              {assignmentFilter === "mine" ? "My Assigned Cases" : "All Cases"}{" "}
+              <span className="text-muted">({filteredCases.length})</span>
+            </>
+          }
+          hi={assignmentFilter === "mine" ? "मेरे नियत मामले" : "सभी मामले"}
+          className="text-lg font-semibold text-foreground"
+          hiClassName="block text-xs font-normal text-muted"
+        />
         <div className="flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-1 rounded-lg border border-border bg-background-elevated p-1 text-sm">
             <button
               onClick={() => setAssignmentFilter("all")}
-              className={`rounded-md px-3 py-1.5 transition-colors ${
+              className={`whitespace-nowrap rounded-md px-3 py-1.5 transition-all active:scale-[0.98] ${
                 assignmentFilter === "all" ? "bg-accent text-white" : "text-muted hover:text-foreground"
               }`}
             >
-              All Cases
+              <Bilingual en="All Cases" hi="सभी मामले" />
             </button>
             <button
               onClick={() => setAssignmentFilter("mine")}
-              className={`rounded-md px-3 py-1.5 transition-colors ${
+              className={`whitespace-nowrap rounded-md px-3 py-1.5 transition-all active:scale-[0.98] ${
                 assignmentFilter === "mine" ? "bg-accent text-white" : "text-muted hover:text-foreground"
               }`}
             >
-              My Assigned Cases ({myAssignedCount})
+              <Bilingual en={`My Assigned Cases (${myAssignedCount})`} hi="मेरे नियत मामले" />
             </button>
           </div>
           <div className="flex items-center gap-1 rounded-lg border border-border bg-background-elevated p-1 text-sm">
             <button
               onClick={() => setSort("priority")}
-              className={`rounded-md px-3 py-1.5 transition-colors ${
+              className={`whitespace-nowrap rounded-md px-3 py-1.5 transition-all active:scale-[0.98] ${
                 sort === "priority" ? "bg-accent text-white" : "text-muted hover:text-foreground"
               }`}
             >
-              Priority
+              <Bilingual en="Priority" hi="प्राथमिकता" />
             </button>
             <button
               onClick={() => setSort("newest")}
-              className={`rounded-md px-3 py-1.5 transition-colors ${
+              className={`whitespace-nowrap rounded-md px-3 py-1.5 transition-all active:scale-[0.98] ${
                 sort === "newest" ? "bg-accent text-white" : "text-muted hover:text-foreground"
               }`}
             >
-              Newest
+              <Bilingual en="Newest" hi="नवीनतम" />
             </button>
           </div>
         </div>
@@ -153,44 +165,60 @@ export function CaseList({
             className="w-full rounded-lg border border-border bg-background-elevated py-2.5 pl-9 pr-3 text-sm text-foreground outline-none transition-colors placeholder:text-muted focus:border-accent"
           />
         </div>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value as ComplaintStatus | "all")}
-          className="rounded-lg border border-border bg-background-elevated px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-accent"
-        >
-          <option value="all">All statuses</option>
-          {STATUS_OPTIONS.map((s) => (
-            <option key={s} value={s}>
-              {COMPLAINT_STATUS_LABEL[s]}
-            </option>
-          ))}
-        </select>
-        <select
-          value={categoryFilter}
-          onChange={(e) => setCategoryFilter(e.target.value as ComplaintCategory | "all")}
-          className="rounded-lg border border-border bg-background-elevated px-3 py-2.5 text-sm text-foreground outline-none transition-colors focus:border-accent"
-        >
-          <option value="all">All categories</option>
-          {CATEGORY_OPTIONS.map((c) => (
-            <option key={c} value={c}>
-              {CATEGORY_LABEL[c]}
-            </option>
-          ))}
-        </select>
+        <div className="relative">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as ComplaintStatus | "all")}
+            className="w-full appearance-none rounded-lg border border-border bg-background-elevated py-2.5 pl-3 pr-9 text-sm text-foreground outline-none transition-colors focus:border-accent sm:w-auto"
+          >
+            <option value="all">All statuses / सभी स्थितियां</option>
+            {STATUS_OPTIONS.map((s) => (
+              <option key={s} value={s}>
+                {COMPLAINT_STATUS_LABEL[s]} / {COMPLAINT_STATUS_LABEL_HI[s]}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+        </div>
+        <div className="relative">
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value as ComplaintCategory | "all")}
+            className="w-full appearance-none rounded-lg border border-border bg-background-elevated py-2.5 pl-3 pr-9 text-sm text-foreground outline-none transition-colors focus:border-accent sm:w-auto"
+          >
+            <option value="all">All categories / सभी श्रेणियां</option>
+            {CATEGORY_OPTIONS.map((c) => (
+              <option key={c} value={c}>
+                {CATEGORY_LABEL[c]} / {CATEGORY_LABEL_HI[c]}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
+        </div>
       </div>
 
       {filteredCases.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border p-16 text-center">
-          <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-accent-soft text-accent-strong">
-            <Radar className="h-6 w-6" />
-          </div>
-          <h3 className="text-lg font-semibold text-foreground">
-            {cases.length === 0
-              ? "No cases yet"
-              : assignmentFilter === "mine"
-                ? "No cases assigned to you"
-                : "No cases match your filters"}
-          </h3>
+          <NoCasesIllustration className="pop-in mb-4 h-32 w-32" />
+          <Bilingual
+            as="h3"
+            en={
+              cases.length === 0
+                ? "No cases yet"
+                : assignmentFilter === "mine"
+                  ? "No cases assigned to you"
+                  : "No cases match your filters"
+            }
+            hi={
+              cases.length === 0
+                ? "अभी तक कोई मामला नहीं"
+                : assignmentFilter === "mine"
+                  ? "आपको कोई मामला नियत नहीं"
+                  : "आपके फ़िल्टर से कोई मामला मेल नहीं खाता"
+            }
+            className="text-lg font-semibold text-foreground"
+            hiClassName="block text-sm font-normal text-muted"
+          />
           <p className="mt-2 max-w-sm text-sm text-muted">
             {cases.length === 0
               ? "Filed complaints will show up here as soon as civilians report them."
@@ -198,6 +226,14 @@ export function CaseList({
                 ? "Cases are auto-assigned by workload once AI extraction completes."
                 : "Try adjusting your search or filters."}
           </p>
+          {assignmentFilter === "mine" && cases.length > 0 && (
+            <button
+              onClick={() => setAssignmentFilter("all")}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft px-3 py-1.5 text-xs font-medium text-accent-strong transition-all hover:bg-accent/20 active:scale-[0.98]"
+            >
+              <Bilingual en="View All Cases" hi="सभी मामले देखें" />
+            </button>
+          )}
         </div>
       ) : (
         <ul className="flex flex-col gap-3">
@@ -205,15 +241,15 @@ export function CaseList({
             <li key={c.id}>
               <Link
                 href={`/officer/cases/${c.id}`}
-                className="block rounded-xl border border-border bg-background-elevated p-5 transition-colors hover:border-accent/40"
+                className="block rounded-xl border border-border bg-background-elevated p-5 transition-all hover:border-accent/40 active:scale-[0.99]"
               >
                 <div className="flex items-start justify-between gap-4">
                   <h3 className="font-medium text-foreground">{c.title}</h3>
                   <div className="flex shrink-0 items-center gap-2">
                     {c.isOverdue && <OverdueBadge />}
                     <LinkedCasesBadge count={c.linkCount} />
-                    <PriorityBadge priority={c.extracted_data?.priority} />
-                    <StatusBadge status={c.status} />
+                    <PriorityBadge priority={c.extracted_data?.priority} bilingual />
+                    <StatusBadge status={c.status} bilingual />
                   </div>
                 </div>
                 <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-xs text-muted">
@@ -236,6 +272,7 @@ export function CaseList({
                     <span className="inline-flex items-center gap-1.5">
                       <Tag className="h-3.5 w-3.5" />
                       {CATEGORY_LABEL[c.extracted_data.category]}
+                      <span className="text-muted/70">{CATEGORY_LABEL_HI[c.extracted_data.category]}</span>
                     </span>
                   )}
                   <span
@@ -244,11 +281,15 @@ export function CaseList({
                     }`}
                   >
                     <UserCheck className="h-3.5 w-3.5" />
-                    {c.assignedOfficerName
-                      ? c.assignedOfficerId === currentOfficerId
-                        ? "Assigned to you"
-                        : `Assigned: ${c.assignedOfficerName}`
-                      : "Unassigned"}
+                    {c.assignedOfficerName ? (
+                      c.assignedOfficerId === currentOfficerId ? (
+                        <BilingualInline en="Assigned to you" hi="आपको नियत" />
+                      ) : (
+                        <BilingualInline en={`Assigned: ${c.assignedOfficerName}`} hi="नियत अधिकारी" />
+                      )
+                    ) : (
+                      <BilingualInline en="Unassigned" hi="अनियत" />
+                    )}
                   </span>
                 </div>
               </Link>

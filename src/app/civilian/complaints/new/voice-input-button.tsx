@@ -130,7 +130,7 @@ export function VoiceInputButton({
       <button
         type="button"
         onClick={handleToggle}
-        className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-colors ${
+        className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all active:scale-[0.98] ${
           listening
             ? "border-warm-accent/60 bg-warm-accent/15 text-warm-accent"
             : "border-border bg-background text-muted hover:border-warm-accent/50 hover:text-warm-accent"

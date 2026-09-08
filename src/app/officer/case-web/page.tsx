@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { ArrowLeft, Link2 } from "lucide-react";
 import { CaseWebGraph, type CaseWebNode, type CaseWebLink } from "./case-web-graph";
 import type { ComplaintPriority, ExtractedComplaintData } from "@/lib/complaints";
+import { Bilingual, BilingualInline } from "@/components/bilingual";
 
 export default async function CaseWebPage() {
   const supabase = await createClient();
@@ -59,10 +60,10 @@ export default async function CaseWebPage() {
       <div className="mx-auto w-full max-w-6xl">
         <Link
           href="/officer/dashboard"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-all hover:text-foreground active:scale-[0.98]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to dashboard
+          <Bilingual en="Back to dashboard" hi="डैशबोर्ड पर वापस जाएं" />
         </Link>
 
         <div className="mb-6 flex items-center gap-2.5">
@@ -70,7 +71,13 @@ export default async function CaseWebPage() {
             <Link2 className="h-5 w-5" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold text-foreground">Case Web</h1>
+            <Bilingual
+              as="h1"
+              en="Case Web"
+              hi="केस वेब"
+              className="text-xl font-semibold text-foreground"
+              hiClassName="ml-1.5 text-sm font-normal text-muted"
+            />
             <p className="text-sm text-muted">
               Cases linked by a shared vehicle plate or person name. Click a
               node to open that case, click a link to view its shared entity's
@@ -84,9 +91,13 @@ export default async function CaseWebPage() {
             <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-accent-soft text-accent-strong">
               <Link2 className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground">
-              No linked cases yet
-            </h3>
+            <Bilingual
+              as="h3"
+              en="No linked cases yet"
+              hi="अभी तक कोई जुड़ा मामला नहीं"
+              className="text-lg font-semibold text-foreground"
+              hiClassName="block text-sm font-normal text-muted"
+            />
             <p className="mt-2 max-w-sm text-sm text-muted">
               Once two or more cases share a vehicle plate or person name,
               they&apos;ll show up here connected in a graph.
@@ -96,22 +107,28 @@ export default async function CaseWebPage() {
           <>
             <div className="mb-4 flex flex-wrap items-center gap-4 text-xs text-muted">
               <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-priority-high" /> High priority
+                <span className="h-2.5 w-2.5 rounded-full bg-priority-high" />
+                <BilingualInline en="High priority" hi="उच्च प्राथमिकता" />
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-priority-medium" /> Medium priority
+                <span className="h-2.5 w-2.5 rounded-full bg-priority-medium" />
+                <BilingualInline en="Medium priority" hi="मध्यम प्राथमिकता" />
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-priority-low" /> Low priority
+                <span className="h-2.5 w-2.5 rounded-full bg-priority-low" />
+                <BilingualInline en="Low priority" hi="निम्न प्राथमिकता" />
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="h-2.5 w-2.5 rounded-full bg-muted" /> Unclassified
+                <span className="h-2.5 w-2.5 rounded-full bg-muted" />
+                <BilingualInline en="Unclassified" hi="अवर्गीकृत" />
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="h-0.5 w-4 bg-accent-strong" /> Vehicle plate match
+                <span className="h-0.5 w-4 bg-accent-strong" />
+                <BilingualInline en="Vehicle plate match" hi="वाहन नंबर प्लेट मेल" />
               </span>
               <span className="flex items-center gap-1.5">
-                <span className="h-0.5 w-4 bg-priority-medium" /> Person name match
+                <span className="h-0.5 w-4 bg-priority-medium" />
+                <BilingualInline en="Person name match" hi="व्यक्ति नाम मेल" />
               </span>
             </div>
             <CaseWebGraph nodes={nodes} links={graphLinks} />

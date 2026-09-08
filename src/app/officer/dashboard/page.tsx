@@ -8,6 +8,7 @@ import { CaseList, type CaseListItem } from "./case-list";
 import { TrendAlertBanner } from "./trend-alert-banner";
 import { BriefingPanel } from "./briefing-panel";
 import { EmblemIcon } from "@/components/emblem-icon";
+import { Bilingual } from "@/components/bilingual";
 import { buildLinkCountMap } from "@/lib/case-links";
 import { isCaseOverdue } from "@/lib/overdue";
 import { detectTrends, TREND_LOOKBACK_DAYS, type TrendComplaint } from "@/lib/trend-detection";
@@ -127,7 +128,13 @@ export default async function OfficerDashboardPage() {
         <div className="flex items-center gap-3">
           <EmblemIcon className="h-8 w-8 shrink-0 text-accent-strong" />
           <div>
-            <p className="text-sm text-muted">Signed in as</p>
+            <Bilingual
+              as="p"
+              en="Signed in as"
+              hi="इस रूप में साइन इन"
+              className="text-sm text-muted"
+              hiClassName="text-xs text-muted/80"
+            />
             <h1 className="text-xl font-semibold text-foreground">
               {profile?.full_name || user.email}
             </h1>
@@ -136,33 +143,36 @@ export default async function OfficerDashboardPage() {
         <div className="flex items-center gap-3">
           <Link
             href="/officer/search"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted transition-colors hover:border-accent/50 hover:text-accent-strong"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted transition-all hover:border-accent/50 hover:text-accent-strong active:scale-[0.98]"
           >
             <Search className="h-4 w-4" />
-            Search
+            <Bilingual en="Search" hi="खोजें" />
           </Link>
           <Link
             href="/officer/case-web"
-            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted transition-colors hover:border-accent/50 hover:text-accent-strong"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted transition-all hover:border-accent/50 hover:text-accent-strong active:scale-[0.98]"
           >
             <Network className="h-4 w-4" />
-            Case Web
+            <Bilingual en="Case Web" hi="केस वेब" />
           </Link>
           <form action={signOut}>
-            <button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted transition-colors hover:border-accent/50 hover:text-accent-strong">
+            <button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted transition-all hover:border-accent/50 hover:text-accent-strong active:scale-[0.98]">
               <LogOut className="h-4 w-4" />
-              Sign out
+              <Bilingual en="Sign out" hi="साइन आउट" />
             </button>
           </form>
         </div>
       </header>
 
       <main className="mx-auto mt-8 w-full max-w-5xl">
+        {/* Active emergencies are the single most time-critical thing on this
+            page, so they lead -- ahead of the informational briefing/trend
+            panels below, which can wait a beat if there's an SOS live. */}
+        <SosAlertsPanel initialAlerts={sosAlerts} />
+
         <BriefingPanel />
 
         <TrendAlertBanner alerts={trendAlerts} />
-
-        <SosAlertsPanel initialAlerts={sosAlerts} />
 
         <StatsRow stats={stats} />
 

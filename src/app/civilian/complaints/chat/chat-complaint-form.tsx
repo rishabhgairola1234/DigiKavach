@@ -164,7 +164,7 @@ export function ChatComplaintForm() {
       <div className="w-full max-w-2xl">
         <Link
           href="/civilian/dashboard"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-all hover:text-foreground active:scale-[0.98]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <Bilingual en="Back to dashboard" hi="डैशबोर्ड पर वापस जाएं" />
@@ -232,7 +232,7 @@ export function ChatComplaintForm() {
               </span>
               <Link
                 href="/civilian/complaints/new"
-                className="font-medium underline transition-colors hover:text-priority-high/80"
+                className="font-medium underline transition-all hover:text-priority-high/80 active:scale-[0.98]"
               >
                 <Bilingual en="Use the regular form instead" hi="इसके बजाय सामान्य फॉर्म का उपयोग करें" />
               </Link>
@@ -251,7 +251,7 @@ export function ChatComplaintForm() {
               <button
                 type="submit"
                 disabled={chatPending || !input.trim()}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-warm-accent text-white transition-colors hover:bg-warm-accent/90 disabled:opacity-40"
+                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-warm-accent text-white transition-all hover:bg-warm-accent/90 active:scale-[0.98] disabled:opacity-40"
               >
                 <Send className="h-4 w-4" />
               </button>
@@ -271,7 +271,7 @@ export function ChatComplaintForm() {
                 <button
                   type="button"
                   onClick={() => setPhase("chatting")}
-                  className="inline-flex items-center gap-1 text-xs font-medium text-warm-accent underline transition-colors hover:text-warm-accent/80"
+                  className="inline-flex items-center gap-1 text-xs font-medium text-warm-accent underline transition-all hover:text-warm-accent/80 active:scale-[0.98]"
                 >
                   <Pencil className="h-3 w-3" />
                   <Bilingual en="Keep chatting" hi="चैट जारी रखें" />
@@ -317,7 +317,7 @@ export function ChatComplaintForm() {
                     <button
                       type="button"
                       onClick={() => setDuplicateWarning(null)}
-                      className="font-medium underline transition-colors hover:text-priority-medium/80"
+                      className="font-medium underline transition-all hover:text-priority-medium/80 active:scale-[0.98]"
                     >
                       <Bilingual en="Dismiss" hi="खारिज करें" />
                     </button>
@@ -399,7 +399,7 @@ export function ChatComplaintForm() {
                 type="button"
                 onClick={handleConfirmSubmit}
                 disabled={submitting || !review.title.trim() || !review.description.trim() || !review.incidentDatetime || !review.location.trim()}
-                className="mt-1 inline-flex items-center justify-center gap-2 rounded-lg bg-warm-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-warm-accent/90 disabled:opacity-60"
+                className="mt-1 inline-flex items-center justify-center gap-2 rounded-lg bg-warm-accent px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-warm-accent/90 active:scale-[0.98] disabled:opacity-60"
               >
                 {submitting && <Loader2 className="fade-in h-4 w-4 shrink-0 animate-spin" />}
                 {submitting ? (

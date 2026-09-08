@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Loader2, AlertCircle, ArrowRight, SearchX } from "lucide-react";
 import { searchCasesByQuery, type CaseSearchResult } from "./actions";
+import { Bilingual } from "@/components/bilingual";
 
 export function SearchForm() {
   const [query, setQuery] = useState("");
@@ -34,10 +35,10 @@ export function SearchForm() {
         <button
           type="submit"
           disabled={pending || !query.trim()}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-4 py-2.5 text-sm font-medium text-white transition-all hover:bg-accent-strong active:scale-[0.98] disabled:opacity-60"
         >
           {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          Search
+          <Bilingual en="Search" hi="खोजें" />
         </button>
       </form>
 
@@ -57,7 +58,13 @@ export function SearchForm() {
               <div className="mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-accent-soft text-accent-strong">
                 <SearchX className="h-5 w-5" />
               </div>
-              <h3 className="text-sm font-semibold text-foreground">No genuine matches found</h3>
+              <Bilingual
+                as="h3"
+                en="No genuine matches found"
+                hi="कोई वास्तविक मेल नहीं मिला"
+                className="text-sm font-semibold text-foreground"
+                hiClassName="block text-xs font-normal text-muted"
+              />
               <p className="mt-1 max-w-sm text-xs text-muted">
                 Gemini didn&apos;t find any cases confidently relevant to that query. Try
                 rephrasing or broadening it.
@@ -73,7 +80,7 @@ export function SearchForm() {
                   <li key={r.complaintId}>
                     <Link
                       href={`/officer/cases/${r.complaintId}`}
-                      className="group flex items-start gap-3 rounded-xl border border-border bg-background p-4 transition-colors hover:border-accent/50"
+                      className="group flex items-start gap-3 rounded-xl border border-border bg-background p-4 transition-all hover:border-accent/50 active:scale-[0.99]"
                     >
                       <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent-soft text-xs font-semibold text-accent-strong">
                         {i + 1}

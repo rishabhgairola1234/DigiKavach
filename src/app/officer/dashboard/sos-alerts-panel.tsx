@@ -7,6 +7,7 @@ import { Siren, ShieldCheck, MapPin, ExternalLink, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client";
 import { formatRelativeTime } from "@/lib/time";
 import { resolveSosAlert } from "./sos-actions";
+import { Bilingual } from "@/components/bilingual";
 
 // Leaflet touches `window` at import time, so it can never be part of the
 // server-rendered bundle -- `ssr: false` is what actually guarantees that
@@ -117,9 +118,13 @@ export function SosAlertsPanel({ initialAlerts }: { initialAlerts: SosAlert[] })
           <Siren className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-foreground">
-            Active SOS Alerts
-          </h2>
+          <Bilingual
+            as="h2"
+            en="Active SOS Alerts"
+            hi="सक्रिय एसओएस अलर्ट"
+            className="text-sm font-semibold text-foreground"
+            hiClassName="block text-xs font-normal text-muted"
+          />
           <p className="text-xs text-muted">Updates live as alerts come in</p>
         </div>
       </div>
@@ -127,12 +132,17 @@ export function SosAlertsPanel({ initialAlerts }: { initialAlerts: SosAlert[] })
       {alerts.length === 0 ? (
         <div className="flex items-center gap-2 rounded-lg border border-dashed border-border px-4 py-4 text-sm text-muted">
           <ShieldCheck className="h-4 w-4 shrink-0 text-priority-low" />
-          All clear — no active SOS alerts.
+          <Bilingual en="All clear — no active SOS alerts." hi="सब ठीक है — कोई सक्रिय एसओएस अलर्ट नहीं।" />
         </div>
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {alerts.map((alert) => (
-            <AlertCard key={alert.id} alert={alert} mounted={mounted} />
+            <AlertCard
+              key={alert.id}
+              alert={alert}
+              mounted={mounted}
+              onResolved={() => setAlerts((prev) => prev.filter((a) => a.id !== alert.id))}
+            />
           ))}
         </ul>
       )}
@@ -140,7 +150,15 @@ export function SosAlertsPanel({ initialAlerts }: { initialAlerts: SosAlert[] })
   );
 }
 
-function AlertCard({ alert, mounted }: { alert: SosAlert; mounted: boolean }) {
+function AlertCard({
+  alert,
+  mounted,
+  onResolved,
+}: {
+  alert: SosAlert;
+  mounted: boolean;
+  onResolved: () => void;
+}) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -161,7 +179,7 @@ function AlertCard({ alert, mounted }: { alert: SosAlert; mounted: boolean }) {
           className="mt-1.5 inline-flex items-center gap-1.5 text-xs text-accent-strong transition-colors hover:text-accent"
         >
           <MapPin className="h-3.5 w-3.5" />
-          Open in Google Maps
+          <Bilingual en="Open in Google Maps" hi="गूगल मैप्स में खोलें" />
           <ExternalLink className="h-3 w-3" />
         </a>
 
@@ -171,13 +189,23 @@ function AlertCard({ alert, mounted }: { alert: SosAlert; mounted: boolean }) {
             startTransition(async () => {
               setError(null);
               const result = await resolveSosAlert(alert.id);
-              if (result.error) setError(result.error);
+              // Removed here on success rather than waiting on the Realtime
+              // UPDATE event to do it -- the resolving officer's own tab
+              // should never depend on a round-trip through Realtime (which
+              // can silently miss events after a dropped/reconnected socket)
+              // just to see their own action take effect. Realtime still
+              // handles this alert disappearing from *other* officers' tabs.
+              if (result.error) {
+                setError(result.error);
+              } else {
+                onResolved();
+              }
             })
           }
-          className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-priority-low/40 bg-priority-low/10 px-3 py-2 text-sm font-medium text-priority-low transition-colors hover:bg-priority-low/20 disabled:opacity-60"
+          className="mt-3 inline-flex w-full items-center justify-center gap-1.5 rounded-lg border border-priority-low/40 bg-priority-low/10 px-3 py-2 text-sm font-medium text-priority-low transition-all hover:bg-priority-low/20 active:scale-[0.98] disabled:opacity-60"
         >
           {pending && <Loader2 className="fade-in h-3.5 w-3.5 animate-spin" />}
-          Mark Resolved
+          <Bilingual en="Mark Resolved" hi="सुलझाया गया चिह्नित करें" />
         </button>
         {error && <p className="mt-2 text-xs text-priority-high">{error}</p>}
       </div>

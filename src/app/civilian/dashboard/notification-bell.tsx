@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
+import { NoNotificationsIllustration } from "@/components/illustrations/no-notifications-illustration";
 import { createClient } from "@/lib/supabase/client";
 import { formatRelativeTime } from "@/lib/time";
 import { markNotificationRead } from "./notification-actions";
@@ -34,7 +35,22 @@ export function NotificationBell({
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "notifications" },
         (payload) => {
-          setNotifications((prev) => [payload.new as Notification, ...prev].slice(0, 20));
+          const row = payload.new as Notification;
+          console.log("[NotificationBell] INSERT received:", row.id);
+
+          setNotifications((prev) => {
+            if (prev.some((n) => n.id === row.id)) {
+              // Realtime can redeliver an INSERT on reconnect (e.g. right
+              // after a dev-server restart, or any dropped/rejoined
+              // WebSocket) -- without this guard a redelivered row was
+              // silently duplicated in the list (and, now that sound
+              // actually plays, silently duplicated the notification tone
+              // too). Same guard already used in sos-alerts-panel.tsx.
+              console.log("[NotificationBell] Duplicate INSERT for", row.id, "-- ignoring.");
+              return prev;
+            }
+            return [row, ...prev].slice(0, 20);
+          });
         }
       )
       .on(
@@ -64,7 +80,7 @@ export function NotificationBell({
     <div className="relative">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted transition-colors hover:border-warm-accent/50 hover:text-warm-accent"
+        className="relative inline-flex h-10 w-10 items-center justify-center rounded-lg border border-border text-muted transition-all hover:border-warm-accent/50 hover:text-warm-accent active:scale-[0.98]"
       >
         <Bell className="h-4.5 w-4.5" />
         {unreadCount > 0 && (
@@ -88,13 +104,16 @@ export function NotificationBell({
               />
             </div>
             {notifications.length === 0 ? (
-              <Bilingual
-                as="p"
-                en="No notifications yet."
-                hi="अभी तक कोई सूचना नहीं।"
-                className="px-4 py-6 text-center text-sm text-muted"
-                hiClassName="block text-xs text-muted/80"
-              />
+              <div className="flex flex-col items-center gap-2 px-4 py-8 text-center">
+                <NoNotificationsIllustration className="pop-in h-14 w-14" />
+                <Bilingual
+                  as="p"
+                  en="No notifications yet"
+                  hi="अभी तक कोई सूचना नहीं"
+                  className="text-sm text-muted"
+                  hiClassName="block text-xs text-muted/80"
+                />
+              </div>
             ) : (
               <ul>
                 {notifications.map((n) => (
@@ -102,7 +121,7 @@ export function NotificationBell({
                     <Link
                       href={`/civilian/complaints/${n.complaint_id}`}
                       onClick={() => handleClickNotification(n)}
-                      className="block border-b border-border px-4 py-3 text-sm transition-colors last:border-b-0 hover:bg-background"
+                      className="block border-b border-border px-4 py-3 text-sm transition-all last:border-b-0 hover:bg-background active:scale-[0.98]"
                     >
                       <div className="flex items-start gap-2">
                         {!n.is_read && (

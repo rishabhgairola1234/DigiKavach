@@ -24,13 +24,27 @@ export async function resolveSosAlert(alertId: string): Promise<ResolveSosResult
     return { error: "Only officers can resolve SOS alerts." };
   }
 
-  const { error } = await supabase
+  // .update().eq() alone would report success even if RLS silently matched
+  // zero rows (Supabase's client only errors on a query failure, not on an
+  // update that quietly affected nothing) -- chaining .select().single()
+  // forces the row back and turns "nothing was actually updated" into a
+  // real, visible error instead of a false "it worked."
+  const { data, error } = await supabase
     .from("sos_alerts")
     .update({ status: "resolved" })
-    .eq("id", alertId);
+    .eq("id", alertId)
+    .select("id, status")
+    .single();
 
-  if (error) {
+  if (error || !data) {
     console.error(`[resolveSosAlert] Failed to resolve alert ${alertId}:`, error);
+    return { error: "Failed to resolve alert." };
+  }
+
+  if (data.status !== "resolved") {
+    console.error(
+      `[resolveSosAlert] Update for alert ${alertId} returned status "${data.status}", expected "resolved".`
+    );
     return { error: "Failed to resolve alert." };
   }
 

@@ -32,7 +32,7 @@ export function CallEmergencyButton() {
       <button
         onClick={handleClick}
         disabled={isConnecting}
-        className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-red-500/60 text-red-400 transition-colors hover:bg-red-500/10 hover:text-red-300 disabled:opacity-80"
+        className="flex h-20 w-20 items-center justify-center rounded-full border-2 border-red-500/60 text-red-400 transition-all hover:bg-red-500/10 hover:text-red-300 active:scale-[0.98] disabled:opacity-80"
       >
         {isConnecting ? (
           <Loader2 className="h-8 w-8 animate-spin" />

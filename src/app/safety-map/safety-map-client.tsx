@@ -42,7 +42,7 @@ export function SafetyMapClient({ points }: { points: SafetyMapPoint[] }) {
               <button
                 key={point.id}
                 onClick={() => setFocusPointId(point.id)}
-                className={`flex items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left text-sm transition-colors ${
+                className={`flex items-start gap-2.5 rounded-lg border px-3 py-2.5 text-left text-sm transition-all active:scale-[0.98] ${
                   isSelected
                     ? "border-warm-accent/60 bg-warm-accent/10"
                     : "border-transparent bg-background hover:border-warm-accent/30"

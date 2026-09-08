@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { NotebookPen, Loader2 } from "lucide-react";
 import { addOfficerNote } from "./actions";
+import { Bilingual } from "@/components/bilingual";
 
 export type OfficerNote = {
   id: string;
@@ -45,7 +46,13 @@ export function NotesPanel({
           <NotebookPen className="h-4.5 w-4.5" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-foreground">Officer Notes</h2>
+          <Bilingual
+            as="h2"
+            en="Officer Notes"
+            hi="अधिकारी टिप्पणियां"
+            className="text-sm font-semibold text-foreground"
+            hiClassName="ml-1.5 text-xs font-normal text-muted"
+          />
           <p className="text-xs text-muted">Private — visible to officers only</p>
         </div>
       </div>
@@ -85,10 +92,10 @@ export function NotesPanel({
         <button
           type="submit"
           disabled={pending || !text.trim()}
-          className="inline-flex items-center justify-center gap-1.5 self-end rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-60"
+          className="inline-flex items-center justify-center gap-1.5 self-end rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-all hover:bg-accent-strong active:scale-[0.98] disabled:opacity-60"
         >
           {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          Add Note
+          <Bilingual en="Add Note" hi="टिप्पणी जोड़ें" />
         </button>
       </form>
     </section>

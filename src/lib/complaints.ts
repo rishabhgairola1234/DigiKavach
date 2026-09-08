@@ -96,6 +96,15 @@ export const PRIORITY_LABEL: Record<ComplaintPriority, string> = {
   low: "Low",
 };
 
+// Bilingual label, same reasoning as COMPLAINT_STATUS_LABEL_HI above -- used
+// on both civilian and (now) officer pages, opt-in via each badge's own
+// `bilingual` prop.
+export const PRIORITY_LABEL_HI: Record<ComplaintPriority, string> = {
+  high: "उच्च",
+  medium: "मध्यम",
+  low: "निम्न",
+};
+
 export const PRIORITY_BADGE_CLASSES: Record<ComplaintPriority, string> = {
   high: "bg-priority-high/15 text-priority-high border-priority-high/30",
   medium: "bg-priority-medium/15 text-priority-medium border-priority-medium/30",

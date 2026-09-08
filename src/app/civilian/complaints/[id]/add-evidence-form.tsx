@@ -78,7 +78,7 @@ export function AddEvidenceForm({ complaintId }: { complaintId: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="inline-flex items-center justify-center gap-1.5 self-end rounded-lg bg-warm-accent px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-warm-accent/90 disabled:opacity-60"
+        className="inline-flex items-center justify-center gap-1.5 self-end rounded-lg bg-warm-accent px-3 py-2 text-sm font-medium text-white transition-all hover:bg-warm-accent/90 active:scale-[0.98] disabled:opacity-60"
       >
         {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
         <Bilingual en="Add Evidence" hi="साक्ष्य जोड़ें" />

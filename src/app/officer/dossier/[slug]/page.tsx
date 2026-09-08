@@ -6,9 +6,11 @@ import {
   decodeEntitySlug,
   normalizedValueForEntity,
   ENTITY_TYPE_LABEL,
+  ENTITY_TYPE_LABEL_HI,
   type DossierEntry,
 } from "@/lib/dossier";
 import type { ExtractedComplaintData } from "@/lib/complaints";
+import { Bilingual } from "@/components/bilingual";
 
 export default async function DossierPage({
   params,
@@ -88,10 +90,10 @@ export default async function DossierPage({
       <div className="mx-auto w-full max-w-3xl">
         <Link
           href="/officer/case-web"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-all hover:text-foreground active:scale-[0.98]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to Case Web
+          <Bilingual en="Back to Case Web" hi="केस वेब पर वापस जाएं" />
         </Link>
 
         <div className="rounded-2xl border border-border bg-background-elevated p-8">
@@ -102,6 +104,9 @@ export default async function DossierPage({
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-muted">
                 {ENTITY_TYPE_LABEL[entity.type]} Dossier
+                <span className="ml-1.5 normal-case text-muted/80">
+                  {ENTITY_TYPE_LABEL_HI[entity.type]} डोज़ियर
+                </span>
               </p>
               <h1 className="text-2xl font-semibold text-foreground">{entity.value}</h1>
             </div>
@@ -117,7 +122,7 @@ export default async function DossierPage({
               <li key={`${entry.complaintId}-${i}`}>
                 <Link
                   href={`/officer/cases/${entry.complaintId}`}
-                  className="block rounded-xl border border-border bg-background p-4 transition-colors hover:border-accent/50"
+                  className="block rounded-xl border border-border bg-background p-4 transition-all hover:border-accent/50 active:scale-[0.99]"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <h2 className="font-medium text-foreground">{entry.title}</h2>
@@ -138,7 +143,7 @@ export default async function DossierPage({
                       {entry.location}
                     </span>
                     <span className="ml-auto inline-flex items-center gap-1 text-accent-strong">
-                      View case
+                      <Bilingual en="View case" hi="मामला देखें" />
                       <ExternalLink className="h-3 w-3" />
                     </span>
                   </div>

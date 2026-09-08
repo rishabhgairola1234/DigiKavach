@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Sparkles, Loader2, AlertCircle } from "lucide-react";
 import { generateBriefing } from "./briefing-actions";
+import { Bilingual } from "@/components/bilingual";
 
 export function BriefingPanel() {
   const [briefing, setBriefing] = useState<string | null>(null);
@@ -24,11 +25,17 @@ export function BriefingPanel() {
     <section className="mb-6 rounded-xl border border-accent/30 bg-accent-soft p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-accent text-white">
-            <Sparkles className="h-4.5 w-4.5" />
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-accent text-white">
+            <Sparkles className="h-5 w-5" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-foreground">Today&apos;s Briefing</h2>
+            <Bilingual
+              as="h2"
+              en="Today's Briefing"
+              hi="आज की जानकारी"
+              className="text-sm font-semibold text-foreground"
+              hiClassName="ml-1.5 text-xs font-normal text-muted"
+            />
             <p className="text-xs text-muted">
               {generatedAt
                 ? `Generated ${generatedAt.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}`
@@ -39,10 +46,14 @@ export function BriefingPanel() {
         <button
           onClick={handleGenerate}
           disabled={pending}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-all hover:bg-accent-strong active:scale-[0.98] disabled:opacity-60"
         >
           {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          {briefing ? "Regenerate" : "Generate Briefing"}
+          {briefing ? (
+            <Bilingual en="Regenerate" hi="पुनः बनाएं" />
+          ) : (
+            <Bilingual en="Generate Briefing" hi="जानकारी बनाएं" />
+          )}
         </button>
       </div>
 

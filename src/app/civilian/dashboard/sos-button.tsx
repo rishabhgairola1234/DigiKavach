@@ -65,7 +65,7 @@ export function SosButton() {
         </p>
         <button
           onClick={() => setState("idle")}
-          className="mt-1 text-xs text-muted underline transition-colors hover:text-foreground"
+          className="mt-1 text-xs text-muted underline transition-all hover:text-foreground active:scale-[0.98]"
         >
           <Bilingual en="Send another alert" hi="एक और अलर्ट भेजें" />
         </button>
@@ -91,7 +91,7 @@ export function SosButton() {
         )}
       </button>
 
-      <div className="text-center">
+      <div className="min-h-11 text-center">
         {state === "locating" || state === "sending" ? (
           <p className="text-sm font-semibold text-foreground">
             {state === "locating" ? "Getting your location..." : "Sending alert..."}
@@ -118,7 +118,7 @@ export function SosButton() {
           <p className="text-xs text-priority-high">{error}</p>
           <button
             onClick={handleClick}
-            className="text-xs font-medium text-priority-high underline transition-colors hover:text-priority-high/80"
+            className="text-xs font-medium text-priority-high underline transition-all hover:text-priority-high/80 active:scale-[0.98]"
           >
             <Bilingual en="Try again" hi="पुनः प्रयास करें" />
           </button>

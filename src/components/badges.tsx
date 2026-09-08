@@ -4,6 +4,7 @@ import {
   COMPLAINT_STATUS_LABEL_HI,
   COMPLAINT_STATUS_BADGE_CLASSES,
   PRIORITY_LABEL,
+  PRIORITY_LABEL_HI,
   PRIORITY_BADGE_CLASSES,
   type ComplaintStatus,
   type ComplaintPriority,
@@ -34,13 +35,15 @@ export function StatusBadge({
 
 export function PriorityBadge({
   priority,
+  bilingual = false,
 }: {
   priority: ComplaintPriority | null | undefined;
+  bilingual?: boolean;
 }) {
   if (!priority) {
     return (
       <span className="shrink-0 rounded-full border border-border bg-muted/10 px-2.5 py-1 text-xs font-medium text-muted">
-        Unclassified
+        {bilingual ? <BilingualInline en="Unclassified" hi="अवर्गीकृत" /> : "Unclassified"}
       </span>
     );
   }
@@ -49,7 +52,11 @@ export function PriorityBadge({
     <span
       className={`shrink-0 rounded-full border px-2.5 py-1 text-xs font-medium ${PRIORITY_BADGE_CLASSES[priority]}`}
     >
-      {PRIORITY_LABEL[priority]} Priority
+      {bilingual ? (
+        <BilingualInline en={`${PRIORITY_LABEL[priority]} Priority`} hi={`${PRIORITY_LABEL_HI[priority]} प्राथमिकता`} />
+      ) : (
+        `${PRIORITY_LABEL[priority]} Priority`
+      )}
     </span>
   );
 }

@@ -45,7 +45,7 @@ export function ComplaintForm() {
       <div className="w-full max-w-2xl">
         <Link
           href="/civilian/dashboard"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-all hover:text-foreground active:scale-[0.98]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <Bilingual en="Back to dashboard" hi="डैशबोर्ड पर वापस जाएं" />
@@ -111,7 +111,7 @@ export function ComplaintForm() {
                   <button
                     type="button"
                     onClick={() => setDuplicateWarning(null)}
-                    className="font-medium underline transition-colors hover:text-priority-medium/80"
+                    className="font-medium underline transition-all hover:text-priority-medium/80 active:scale-[0.98]"
                   >
                     <Bilingual en="Dismiss" hi="खारिज करें" />
                   </button>
@@ -181,7 +181,7 @@ export function ComplaintForm() {
             <button
               type="submit"
               disabled={pending}
-              className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-warm-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-warm-accent/90 disabled:opacity-60"
+              className="mt-2 inline-flex min-h-14 items-center justify-center gap-2 rounded-lg bg-warm-accent px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-warm-accent/90 active:scale-[0.98] disabled:opacity-60"
             >
               {pending && <Loader2 className="fade-in h-4 w-4 shrink-0 animate-spin" />}
               {pending ? (

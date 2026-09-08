@@ -13,6 +13,7 @@ import { NextStepsPanel } from "./next-steps-panel";
 import { NotesPanel, type OfficerNote } from "./notes-panel";
 import { CameraIntelligencePanel } from "./camera-intelligence-panel";
 import { RecordingsList, type CameraRecording } from "./recordings-list";
+import { CaseDetailTabs, type CaseDetailTab } from "./case-detail-tabs";
 import { evidenceDisplayName } from "@/lib/evidence";
 import { otherComplaintId } from "@/lib/case-links";
 import { parseMatchedOn, encodeEntitySlug } from "@/lib/dossier";
@@ -32,12 +33,14 @@ import {
   ExternalLink,
   Link2,
   CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import {
   CATEGORY_LABEL,
   type ComplaintStatus,
   type ExtractedComplaintData,
 } from "@/lib/complaints";
+import { Bilingual, BilingualInline } from "@/components/bilingual";
 
 export default async function CaseDetailPage({
   params,
@@ -189,15 +192,148 @@ export default async function CaseDetailPage({
     };
   });
 
+  const tabs: CaseDetailTab[] = [
+    {
+      id: "evidence",
+      en: "Evidence",
+      hi: "साक्ष्य",
+      icon: <Paperclip className="h-4 w-4 shrink-0" />,
+      content: (
+        <>
+          <section>
+            <Bilingual
+              as="h2"
+              en="Evidence"
+              hi="साक्ष्य"
+              className="text-sm font-semibold text-foreground"
+              hiClassName="ml-1.5 text-xs font-normal text-muted"
+            />
+            {evidence.length === 0 ? (
+              <p className="mt-2 text-sm text-muted">No evidence uploaded.</p>
+            ) : (
+              <ul className="mt-3 flex flex-col gap-2">
+                {evidence.map((file) => {
+                  const Icon = file.file_type.startsWith("image/") ? ImageIcon : FileText;
+                  return (
+                    <li key={file.id}>
+                      {file.url ? (
+                        <a
+                          href={file.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2.5 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground transition-colors hover:border-accent/50"
+                        >
+                          <Icon className="h-4 w-4 shrink-0 text-accent-strong" />
+                          <span className="truncate">{evidenceDisplayName(file.file_path)}</span>
+                          <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-muted" />
+                        </a>
+                      ) : (
+                        <div className="flex items-center gap-2.5 rounded-lg border border-dashed border-border px-3 py-2.5 text-sm text-muted">
+                          <Paperclip className="h-4 w-4 shrink-0" />
+                          <span className="truncate">
+                            {evidenceDisplayName(file.file_path)} (link unavailable)
+                          </span>
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          <CameraIntelligencePanel complaintId={complaint.id} tabId="evidence">
+            <RecordingsList recordings={recordings} />
+          </CameraIntelligencePanel>
+        </>
+      ),
+    },
+    {
+      id: "ai-tools",
+      en: "AI Tools",
+      hi: "एआई उपकरण",
+      icon: <Sparkles className="h-4 w-4 shrink-0" />,
+      content: (
+        <>
+          <LegalSectionsPanel complaintId={complaint.id} />
+          <EvidenceSufficiencyPanel complaintId={complaint.id} />
+          <NextStepsPanel complaintId={complaint.id} />
+        </>
+      ),
+    },
+    {
+      id: "fir-copilot",
+      en: "FIR & Copilot",
+      hi: "एफआईआर और सहायक",
+      icon: <FileText className="h-4 w-4 shrink-0" />,
+      content: (
+        <>
+          <FirDraftPanel complaintId={complaint.id} />
+          <CopilotPanel complaintId={complaint.id} />
+        </>
+      ),
+    },
+    {
+      id: "linked-notes",
+      en: "Linked Cases & Notes",
+      hi: "जुड़े मामले और टिप्पणियां",
+      icon: <Link2 className="h-4 w-4 shrink-0" />,
+      content: (
+        <>
+          {linkedCases.length > 0 && (
+            <section>
+              <h2 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                <Link2 className="h-4 w-4 text-priority-medium" />
+                <Bilingual en="Linked Cases" hi="जुड़े हुए मामले" />
+              </h2>
+              <ul className="mt-3 flex flex-col gap-2">
+                {linkedCases.map((lc) => {
+                  const entity = parseMatchedOn(lc.matchedOn);
+                  return (
+                    <li
+                      key={`${lc.id}-${lc.matchedOn}`}
+                      className="rounded-lg border border-priority-medium/30 bg-priority-medium/[0.06] px-3 py-2.5"
+                    >
+                      <Link
+                        href={`/officer/cases/${lc.id}`}
+                        className="flex items-center justify-between gap-3 text-sm transition-all hover:text-accent-strong active:scale-[0.98]"
+                      >
+                        <span className="flex flex-col">
+                          <span className="font-medium text-foreground">{lc.title}</span>
+                          <span className="text-xs text-muted">Matched on: {lc.matchedOn}</span>
+                        </span>
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted" />
+                      </Link>
+                      {entity && (
+                        <Link
+                          href={`/officer/dossier/${encodeEntitySlug(entity)}`}
+                          className="mt-1.5 inline-block text-xs font-medium text-accent-strong underline transition-all hover:text-accent active:scale-[0.98]"
+                        >
+                          <Bilingual en="View Dossier" hi="डोज़ियर देखें" />
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          )}
+
+          <NotesPanel complaintId={complaint.id} notes={notes} />
+        </>
+      ),
+    },
+  ];
+
   return (
     <div className="flex flex-1 flex-col bg-background bg-grid px-6 py-10">
       <div className="mx-auto w-full max-w-4xl">
         <Link
           href="/officer/dashboard"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-all hover:text-foreground active:scale-[0.98]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to all cases
+          <Bilingual en="Back to all cases" hi="सभी मामलों पर वापस जाएं" />
         </Link>
 
         <div className="rounded-2xl border border-border bg-background-elevated p-8">
@@ -237,18 +373,20 @@ export default async function CaseDetailPage({
             <div className="flex shrink-0 items-center gap-2">
               {overdue && <OverdueBadge />}
               <LinkedCasesBadge count={linkedCases.length} />
-              <PriorityBadge priority={extractedData?.priority} />
-              <StatusBadge status={status} />
+              <PriorityBadge priority={extractedData?.priority} bilingual />
+              <StatusBadge status={status} bilingual />
             </div>
           </div>
 
           <div className="mt-6 flex flex-wrap items-center gap-3 border-y border-border py-4">
-            <span className="text-sm font-medium text-foreground">Status:</span>
+            <span className="text-sm font-medium text-foreground">
+              Status:<span className="ml-1 font-normal text-muted">स्थिति:</span>
+            </span>
             <StatusSelect complaintId={complaint.id} status={status} />
             {readyForClosure && (
               <span className="pop-in inline-flex items-center gap-1.5 rounded-full border border-priority-low/40 bg-priority-low/15 px-3 py-1.5 text-xs font-semibold text-priority-low">
                 <CheckCircle2 className="h-3.5 w-3.5" />
-                Ready for Closure Review
+                <BilingualInline en="Ready for Closure Review" hi="समापन समीक्षा हेतु तैयार" />
               </span>
             )}
           </div>
@@ -263,16 +401,14 @@ export default async function CaseDetailPage({
             </p>
           )}
 
-          <LegalSectionsPanel complaintId={complaint.id} />
-
-          <EvidenceSufficiencyPanel complaintId={complaint.id} />
-
-          <NextStepsPanel complaintId={complaint.id} />
-
           <section className="mt-6">
-            <h2 className="text-sm font-semibold text-foreground">
-              Full Description
-            </h2>
+            <Bilingual
+              as="h2"
+              en="Full Description"
+              hi="पूर्ण विवरण"
+              className="text-sm font-semibold text-foreground"
+              hiClassName="ml-1.5 text-xs font-normal text-muted"
+            />
             <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted">
               {complaint.description}
             </p>
@@ -285,16 +421,20 @@ export default async function CaseDetailPage({
           </section>
 
           <section className="mt-8">
-            <h2 className="text-sm font-semibold text-foreground">
-              AI-Extracted Entities
-            </h2>
+            <Bilingual
+              as="h2"
+              en="AI-Extracted Entities"
+              hi="एआई-निष्कर्षित इकाइयां"
+              className="text-sm font-semibold text-foreground"
+              hiClassName="ml-1.5 text-xs font-normal text-muted"
+            />
             {!extractedData ? (
               <p className="mt-2 text-sm text-muted">
                 AI extraction is unavailable for this case.
               </p>
             ) : (
               <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                <EntityPanel icon={Users} title="People">
+                <EntityPanel icon={Users} title="People" titleHi="व्यक्ति">
                   {extractedData.people.length === 0 ? (
                     <EmptyEntity />
                   ) : (
@@ -313,7 +453,7 @@ export default async function CaseDetailPage({
                   )}
                 </EntityPanel>
 
-                <EntityPanel icon={Car} title="Vehicles">
+                <EntityPanel icon={Car} title="Vehicles" titleHi="वाहन">
                   {extractedData.vehicles.length === 0 ? (
                     <EmptyEntity />
                   ) : (
@@ -330,7 +470,7 @@ export default async function CaseDetailPage({
                   )}
                 </EntityPanel>
 
-                <EntityPanel icon={MapPin} title="Other Locations">
+                <EntityPanel icon={MapPin} title="Other Locations" titleHi="अन्य स्थान">
                   {extractedData.locations.length === 0 ? (
                     <EmptyEntity />
                   ) : (
@@ -344,7 +484,7 @@ export default async function CaseDetailPage({
                   )}
                 </EntityPanel>
 
-                <EntityPanel icon={Clock} title="Other Times">
+                <EntityPanel icon={Clock} title="Other Times" titleHi="अन्य समय">
                   {extractedData.times.length === 0 ? (
                     <EmptyEntity />
                   ) : (
@@ -361,94 +501,7 @@ export default async function CaseDetailPage({
             )}
           </section>
 
-          <section className="mt-8">
-            <h2 className="text-sm font-semibold text-foreground">Evidence</h2>
-            {evidence.length === 0 ? (
-              <p className="mt-2 text-sm text-muted">No evidence uploaded.</p>
-            ) : (
-              <ul className="mt-3 flex flex-col gap-2">
-                {evidence.map((file) => {
-                  const Icon = file.file_type.startsWith("image/")
-                    ? ImageIcon
-                    : FileText;
-                  return (
-                    <li key={file.id}>
-                      {file.url ? (
-                        <a
-                          href={file.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2.5 rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground transition-colors hover:border-accent/50"
-                        >
-                          <Icon className="h-4 w-4 shrink-0 text-accent-strong" />
-                          <span className="truncate">
-                            {evidenceDisplayName(file.file_path)}
-                          </span>
-                          <ExternalLink className="ml-auto h-3.5 w-3.5 shrink-0 text-muted" />
-                        </a>
-                      ) : (
-                        <div className="flex items-center gap-2.5 rounded-lg border border-dashed border-border px-3 py-2.5 text-sm text-muted">
-                          <Paperclip className="h-4 w-4 shrink-0" />
-                          <span className="truncate">
-                            {evidenceDisplayName(file.file_path)} (link unavailable)
-                          </span>
-                        </div>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </section>
-
-          {linkedCases.length > 0 && (
-            <section className="mt-8">
-              <h2 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                <Link2 className="h-4 w-4 text-priority-medium" />
-                Linked Cases
-              </h2>
-              <ul className="mt-3 flex flex-col gap-2">
-                {linkedCases.map((lc) => {
-                  const entity = parseMatchedOn(lc.matchedOn);
-                  return (
-                    <li
-                      key={`${lc.id}-${lc.matchedOn}`}
-                      className="rounded-lg border border-priority-medium/30 bg-priority-medium/[0.06] px-3 py-2.5"
-                    >
-                      <Link
-                        href={`/officer/cases/${lc.id}`}
-                        className="flex items-center justify-between gap-3 text-sm transition-colors hover:text-accent-strong"
-                      >
-                        <span className="flex flex-col">
-                          <span className="font-medium text-foreground">{lc.title}</span>
-                          <span className="text-xs text-muted">Matched on: {lc.matchedOn}</span>
-                        </span>
-                        <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted" />
-                      </Link>
-                      {entity && (
-                        <Link
-                          href={`/officer/dossier/${encodeEntitySlug(entity)}`}
-                          className="mt-1.5 inline-block text-xs font-medium text-accent-strong underline transition-colors hover:text-accent"
-                        >
-                          View Dossier
-                        </Link>
-                      )}
-                    </li>
-                  );
-                })}
-              </ul>
-            </section>
-          )}
-
-          <CameraIntelligencePanel complaintId={complaint.id}>
-            <RecordingsList recordings={recordings} />
-          </CameraIntelligencePanel>
-
-          <FirDraftPanel complaintId={complaint.id} />
-
-          <NotesPanel complaintId={complaint.id} notes={notes} />
-
-          <CopilotPanel complaintId={complaint.id} />
+          <CaseDetailTabs tabs={tabs} />
         </div>
       </div>
     </div>
@@ -458,10 +511,12 @@ export default async function CaseDetailPage({
 function EntityPanel({
   icon: Icon,
   title,
+  titleHi,
   children,
 }: {
   icon: typeof Users;
   title: string;
+  titleHi: string;
   children: React.ReactNode;
 }) {
   return (
@@ -469,6 +524,7 @@ function EntityPanel({
       <div className="mb-2 flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-muted">
         <Icon className="h-3.5 w-3.5" />
         {title}
+        <span className="normal-case text-muted/70">{titleHi}</span>
       </div>
       {children}
     </div>

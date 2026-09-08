@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Bot, Send, Loader2, AlertCircle, User } from "lucide-react";
 import { askCopilot } from "./actions";
+import { Bilingual } from "@/components/bilingual";
 
 type Message = { role: "user" | "assistant" | "error"; content: string };
 
@@ -42,9 +43,13 @@ export function CopilotPanel({ complaintId }: { complaintId: string }) {
           <Bot className="h-4.5 w-4.5" />
         </div>
         <div>
-          <h2 className="text-sm font-semibold text-foreground">
-            Investigation Copilot
-          </h2>
+          <Bilingual
+            as="h2"
+            en="Investigation Copilot"
+            hi="जांच सहायक"
+            className="text-sm font-semibold text-foreground"
+            hiClassName="ml-1.5 text-xs font-normal text-muted"
+          />
           <p className="text-xs text-muted">Ask questions about this case only</p>
         </div>
       </div>
@@ -109,7 +114,7 @@ export function CopilotPanel({ complaintId }: { complaintId: string }) {
         <button
           type="submit"
           disabled={pending || !question.trim()}
-          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent text-white transition-colors hover:bg-accent-strong disabled:opacity-40"
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-accent text-white transition-all hover:bg-accent-strong active:scale-[0.98] disabled:opacity-40"
         >
           <Send className="h-4 w-4" />
         </button>

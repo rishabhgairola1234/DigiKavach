@@ -5,7 +5,6 @@ import { signOut } from "@/app/actions/sign-out";
 import {
   LogOut,
   FilePlus2,
-  FileText,
   MapPin,
   CalendarClock,
   CheckCircle2,
@@ -17,6 +16,7 @@ import {
 import { StatusBadge } from "@/components/badges";
 import { StatusTracker } from "@/components/status-tracker";
 import { EmblemIcon } from "@/components/emblem-icon";
+import { NoComplaintsIllustration } from "@/components/illustrations/no-complaints-illustration";
 import { Bilingual } from "@/components/bilingual";
 import { SosButton } from "./sos-button";
 import { CallEmergencyButton } from "./call-emergency-button";
@@ -79,7 +79,7 @@ export default async function CivilianDashboardPage({
         <div className="flex items-center gap-3">
           <NotificationBell initialNotifications={notifications ?? []} />
           <form action={signOut}>
-            <button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted transition-colors hover:border-warm-accent/50 hover:text-warm-accent">
+            <button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted transition-all hover:border-warm-accent/50 hover:text-warm-accent active:scale-[0.98]">
               <LogOut className="h-4 w-4" />
               <Bilingual en="Sign out" hi="साइन आउट" />
             </button>
@@ -112,28 +112,28 @@ export default async function CivilianDashboardPage({
           <div className="flex items-center gap-3">
             <Link
               href="/safety-map"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-warm-accent/50 hover:text-warm-accent"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-all hover:border-warm-accent/50 hover:text-warm-accent active:scale-[0.98]"
             >
               <ShieldAlert className="h-4 w-4" />
               <Bilingual en="Safety Map" hi="सुरक्षा मानचित्र" />
             </Link>
             <Link
               href="/civilian/safety-assistant"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-warm-accent/50 hover:text-warm-accent"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-all hover:border-warm-accent/50 hover:text-warm-accent active:scale-[0.98]"
             >
               <LifeBuoy className="h-4 w-4" />
               <Bilingual en="Safety Assistant" hi="सुरक्षा सहायक" />
             </Link>
             <Link
               href="/civilian/complaints/chat"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-warm-accent/40 bg-warm-accent/10 px-4 py-2 text-sm font-semibold text-warm-accent transition-colors hover:bg-warm-accent/20"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-warm-accent/40 bg-warm-accent/10 px-4 py-2 text-sm font-semibold text-warm-accent transition-all hover:bg-warm-accent/20 active:scale-[0.98]"
             >
               <MessageCircle className="h-4 w-4" />
               <Bilingual en="File via Chat" hi="चैट द्वारा दर्ज करें" />
             </Link>
             <Link
               href="/civilian/complaints/new"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-warm-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-warm-accent/90"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-warm-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-warm-accent/90 active:scale-[0.98]"
             >
               <FilePlus2 className="h-4 w-4" />
               <Bilingual en="File a Complaint" hi="शिकायत दर्ज करें" />
@@ -143,9 +143,7 @@ export default async function CivilianDashboardPage({
 
         {!complaints || complaints.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border p-16 text-center">
-            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-warm-accent/15 text-warm-accent">
-              <FileText className="h-6 w-6" />
-            </div>
+            <NoComplaintsIllustration className="pop-in mb-4 h-32 w-32" />
             <Bilingual
               as="h3"
               en="No complaints filed yet"
@@ -157,6 +155,13 @@ export default async function CivilianDashboardPage({
               When you report an incident, it&apos;ll show up here so you can
               track its status.
             </p>
+            <Link
+              href="/civilian/complaints/new"
+              className="mt-5 inline-flex items-center gap-1.5 rounded-lg bg-warm-accent px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-warm-accent/90 active:scale-[0.98]"
+            >
+              <FilePlus2 className="h-4 w-4" />
+              <Bilingual en="File a Complaint" hi="शिकायत दर्ज करें" />
+            </Link>
           </div>
         ) : (
           <ul className="flex flex-col gap-3">
@@ -166,7 +171,7 @@ export default async function CivilianDashboardPage({
                 <li key={complaint.id}>
                   <Link
                     href={`/civilian/complaints/${complaint.id}`}
-                    className="block rounded-xl border border-border bg-background-elevated p-5 transition-colors hover:border-warm-accent/40"
+                    className="block rounded-xl border border-border bg-background-elevated p-5 transition-all hover:border-warm-accent/40 active:scale-[0.99]"
                   >
                     <div className="flex items-start justify-between gap-4">
                       <h3 className="font-medium text-foreground">

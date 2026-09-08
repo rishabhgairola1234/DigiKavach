@@ -6,6 +6,7 @@ import { ShieldAlert, ArrowLeft, Loader2 } from "lucide-react";
 import { Field } from "@/components/auth/field";
 import { initialAuthActionState } from "@/lib/supabase/auth-state";
 import { loginOfficer } from "./actions";
+import { Bilingual } from "@/components/bilingual";
 
 export default function OfficerLoginPage() {
   const [state, formAction, pending] = useActionState(
@@ -20,18 +21,23 @@ export default function OfficerLoginPage() {
           <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-accent-soft text-accent-strong">
             <ShieldAlert className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-semibold text-foreground">
-            Officer Login
-          </h1>
+          <Bilingual
+            as="h1"
+            en="Officer Login"
+            hi="अधिकारी लॉगिन"
+            className="text-2xl font-semibold text-foreground"
+            hiClassName="block text-sm font-normal text-muted"
+          />
           <p className="mt-1 text-sm text-muted">
             Access case data and the Investigation Copilot
           </p>
         </div>
 
         <form action={formAction} className="flex flex-col gap-4">
-          <Field label="Email" name="email" type="email" autoComplete="email" />
+          <Field label="Email" labelHi="ईमेल" name="email" type="email" autoComplete="email" />
           <Field
             label="Password"
+            labelHi="पासवर्ड"
             name="password"
             type="password"
             autoComplete="current-password"
@@ -46,10 +52,10 @@ export default function OfficerLoginPage() {
           <button
             type="submit"
             disabled={pending}
-            className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-accent-strong disabled:opacity-60"
+            className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-semibold text-white transition-all hover:bg-accent-strong active:scale-[0.98] disabled:opacity-60"
           >
             {pending && <Loader2 className="fade-in h-4 w-4 animate-spin" />}
-            Log in
+            <Bilingual en="Log in" hi="लॉग इन करें" />
           </button>
         </form>
 
@@ -59,10 +65,10 @@ export default function OfficerLoginPage() {
         </p>
         <Link
           href="/"
-          className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted transition-colors hover:text-foreground"
+          className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted transition-all hover:text-foreground active:scale-[0.98]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to home
+          <Bilingual en="Back to home" hi="होम पर वापस जाएं" />
         </Link>
       </div>
     </div>

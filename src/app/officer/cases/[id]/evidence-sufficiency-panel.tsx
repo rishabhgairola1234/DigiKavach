@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { ListChecks, Loader2, AlertCircle } from "lucide-react";
 import { checkCaseEvidenceSufficiency } from "./actions";
+import { Bilingual } from "@/components/bilingual";
 
 export function EvidenceSufficiencyPanel({ complaintId }: { complaintId: string }) {
   const [items, setItems] = useState<string[] | null>(null);
@@ -26,17 +27,27 @@ export function EvidenceSufficiencyPanel({ complaintId }: { complaintId: string 
             <ListChecks className="h-4.5 w-4.5" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-foreground">Evidence Sufficiency</h2>
+            <Bilingual
+              as="h2"
+              en="Evidence Sufficiency"
+              hi="साक्ष्य पर्याप्तता"
+              className="text-sm font-semibold text-foreground"
+              hiClassName="ml-1.5 text-xs font-normal text-muted"
+            />
             <p className="text-xs text-muted">AI-identified gaps in this case's evidence</p>
           </div>
         </div>
         <button
           onClick={handleCheck}
           disabled={pending}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-all hover:bg-accent-strong active:scale-[0.98] disabled:opacity-60"
         >
           {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          {items ? "Re-check" : "Check Evidence Sufficiency"}
+          {items ? (
+            <Bilingual en="Re-check" hi="पुनः जांचें" />
+          ) : (
+            <Bilingual en="Check Evidence Sufficiency" hi="साक्ष्य पर्याप्तता जांचें" />
+          )}
         </button>
       </div>
 

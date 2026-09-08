@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { Loader2 } from "lucide-react";
-import { COMPLAINT_STATUS_LABEL, type ComplaintStatus } from "@/lib/complaints";
+import { COMPLAINT_STATUS_LABEL, COMPLAINT_STATUS_LABEL_HI, type ComplaintStatus } from "@/lib/complaints";
 import { updateComplaintStatus } from "./actions";
 
 const STATUS_OPTIONS: ComplaintStatus[] = [
@@ -40,7 +40,7 @@ export function StatusSelect({
       >
         {STATUS_OPTIONS.map((s) => (
           <option key={s} value={s}>
-            {COMPLAINT_STATUS_LABEL[s]}
+            {COMPLAINT_STATUS_LABEL[s]} / {COMPLAINT_STATUS_LABEL_HI[s]}
           </option>
         ))}
       </select>

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { Scale, Loader2 } from "lucide-react";
 import { suggestCaseLegalSections } from "./actions";
 import type { SuggestedLegalSection } from "@/lib/gemini/suggest-legal-sections";
+import { Bilingual } from "@/components/bilingual";
 
 export function LegalSectionsPanel({ complaintId }: { complaintId: string }) {
   const [sections, setSections] = useState<SuggestedLegalSection[] | null>(null);
@@ -21,15 +22,19 @@ export function LegalSectionsPanel({ complaintId }: { complaintId: string }) {
       <div className="flex items-center justify-between gap-3">
         <h2 className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
           <Scale className="h-4 w-4 text-accent-strong" />
-          Suggested Legal Sections
+          <Bilingual en="Suggested Legal Sections" hi="सुझाई गई कानूनी धाराएं" />
         </h2>
         <button
           onClick={handleSuggest}
           disabled={pending}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background-elevated px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-accent/50 disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background-elevated px-3 py-1.5 text-xs font-medium text-foreground transition-all hover:border-accent/50 active:scale-[0.98] disabled:opacity-60"
         >
           {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          {sections ? "Regenerate" : "Suggest Legal Sections"}
+          {sections ? (
+            <Bilingual en="Regenerate" hi="पुनः बनाएं" />
+          ) : (
+            <Bilingual en="Suggest Legal Sections" hi="कानूनी धाराएं सुझाएं" />
+          )}
         </button>
       </div>
 

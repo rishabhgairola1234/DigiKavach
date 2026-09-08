@@ -5,6 +5,7 @@ import Link from "next/link";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { Siren, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { Bilingual } from "@/components/bilingual";
 
 type SosAlertRow = {
   id: string;
@@ -16,32 +17,6 @@ type SosAlertRow = {
 type Toast = { id: string; civilianName: string };
 
 const AUTO_DISMISS_MS = 20000;
-
-// Two quick rising tones via the Web Audio API -- no audio file needed. Best
-// effort: browsers can block audio without a prior user gesture, so this is
-// wrapped in a try/catch and the visual toast is the guaranteed fallback.
-function playAlertTone() {
-  try {
-    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    const ctx = new AudioCtx();
-    [0, 0.18].forEach((delay, i) => {
-      const oscillator = ctx.createOscillator();
-      const gain = ctx.createGain();
-      oscillator.type = "sine";
-      oscillator.frequency.value = i === 0 ? 880 : 1046.5;
-      gain.gain.setValueAtTime(0.001, ctx.currentTime + delay);
-      gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + delay + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + 0.15);
-      oscillator.connect(gain);
-      gain.connect(ctx.destination);
-      oscillator.start(ctx.currentTime + delay);
-      oscillator.stop(ctx.currentTime + delay + 0.16);
-    });
-    setTimeout(() => ctx.close(), 500);
-  } catch (err) {
-    console.error("[OfficerSosListener] Couldn't play alert tone:", err);
-  }
-}
 
 /**
  * Mounted once at the /officer/* layout level so an active SOS is impossible
@@ -82,8 +57,22 @@ export function OfficerSosListener() {
             const row = payload.new as SosAlertRow;
             if (row.status !== "active") return;
 
-            playAlertTone();
-            setToasts((prev) => [{ id: row.id, civilianName: "Loading..." }, ...prev]);
+            console.log("[OfficerSosListener] INSERT received:", row.id);
+
+            let isDuplicate = false;
+            setToasts((prev) => {
+              if (prev.some((t) => t.id === row.id)) {
+                // Same reasoning as NotificationBell's guard: Realtime can
+                // redeliver an INSERT on reconnect, and without this check a
+                // redelivered alert silently duplicated both the toast and
+                // (now that sound works) the alert tone.
+                console.log("[OfficerSosListener] Duplicate INSERT for", row.id, "-- ignoring.");
+                isDuplicate = true;
+                return prev;
+              }
+              return [{ id: row.id, civilianName: "Loading..." }, ...prev];
+            });
+            if (isDuplicate) return;
 
             const { data: civilian } = await supabase
               .from("profiles")
@@ -129,19 +118,25 @@ export function OfficerSosListener() {
             <Siren className="h-5 w-5" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-priority-high">New SOS Alert</p>
+            <Bilingual
+              as="p"
+              en="New SOS Alert"
+              hi="नया एसओएस अलर्ट"
+              className="text-sm font-semibold text-priority-high"
+              hiClassName="ml-1 text-xs font-normal text-priority-high/70"
+            />
             <p className="mt-0.5 truncate text-xs text-muted">{toast.civilianName} needs help</p>
             <Link
               href="/officer/dashboard"
               onClick={() => dismiss(toast.id)}
-              className="mt-2 inline-block text-xs font-medium text-accent-strong underline transition-colors hover:text-accent"
+              className="mt-2 inline-block text-xs font-medium text-accent-strong underline transition-all hover:text-accent active:scale-[0.98]"
             >
-              View on dashboard
+              <Bilingual en="View on dashboard" hi="डैशबोर्ड पर देखें" />
             </Link>
           </div>
           <button
             onClick={() => dismiss(toast.id)}
-            className="shrink-0 text-muted transition-colors hover:text-foreground"
+            className="shrink-0 text-muted transition-all hover:text-foreground active:scale-[0.98]"
           >
             <X className="h-4 w-4" />
           </button>

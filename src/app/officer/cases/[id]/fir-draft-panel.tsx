@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { FileText, Copy, Check, Loader2, AlertCircle } from "lucide-react";
 import { generateCaseFir } from "./actions";
+import { Bilingual } from "@/components/bilingual";
 
 export function FirDraftPanel({ complaintId }: { complaintId: string }) {
   const [draft, setDraft] = useState<string | null>(null);
@@ -36,17 +37,27 @@ export function FirDraftPanel({ complaintId }: { complaintId: string }) {
             <FileText className="h-4.5 w-4.5" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-foreground">FIR Draft</h2>
+            <Bilingual
+              as="h2"
+              en="FIR Draft"
+              hi="एफआईआर मसौदा"
+              className="text-sm font-semibold text-foreground"
+              hiClassName="ml-1.5 text-xs font-normal text-muted"
+            />
             <p className="text-xs text-muted">AI-drafted First Information Report</p>
           </div>
         </div>
         <button
           onClick={handleGenerate}
           disabled={pending}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong disabled:opacity-60"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-all hover:bg-accent-strong active:scale-[0.98] disabled:opacity-60"
         >
           {pending && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
-          {draft ? "Regenerate" : "Generate FIR Draft"}
+          {draft ? (
+            <Bilingual en="Regenerate" hi="पुनः बनाएं" />
+          ) : (
+            <Bilingual en="Generate FIR Draft" hi="एफआईआर मसौदा बनाएं" />
+          )}
         </button>
       </div>
 
@@ -71,14 +82,18 @@ export function FirDraftPanel({ complaintId }: { complaintId: string }) {
             </p>
             <button
               onClick={handleCopy}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border bg-background-elevated px-2.5 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-accent/50"
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-border bg-background-elevated px-2.5 py-1.5 text-xs font-medium text-foreground transition-all hover:border-accent/50 active:scale-[0.98]"
             >
               {copied ? (
                 <Check className="h-3.5 w-3.5 text-priority-low" />
               ) : (
                 <Copy className="h-3.5 w-3.5" />
               )}
-              {copied ? "Copied" : "Copy to clipboard"}
+              {copied ? (
+                <Bilingual en="Copied" hi="कॉपी किया गया" />
+              ) : (
+                <Bilingual en="Copy to clipboard" hi="क्लिपबोर्ड पर कॉपी करें" />
+              )}
             </button>
           </div>
           <div className="rounded-lg border border-border bg-background-elevated p-6">

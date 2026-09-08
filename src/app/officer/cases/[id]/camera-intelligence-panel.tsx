@@ -15,6 +15,8 @@ import {
   type KeyMoment,
 } from "./camera-actions";
 import { findCaseByPlate } from "./plate-actions";
+import { Bilingual } from "@/components/bilingual";
+import { useIsCaseTabActive } from "./case-detail-tabs";
 
 // coco-ssd's prediction shape -- kept local since the package's own types
 // aren't imported until the model is dynamically loaded in the browser.
@@ -74,12 +76,18 @@ const THUMBNAIL_HEIGHT = 120;
 
 export function CameraIntelligencePanel({
   complaintId,
+  tabId,
   children,
 }: {
   complaintId: string;
+  // Which CaseDetailTabs tab this panel lives in, if any -- lets the OCR
+  // loop pause while that tab isn't the one showing (see the isTabActive
+  // effect below). Omit outside a tabbed layout; the panel just stays live.
+  tabId?: string;
   children?: React.ReactNode;
 }) {
   const router = useRouter();
+  const isTabActive = useIsCaseTabActive(tabId);
   const [state, setState] = useState<CameraState>("idle");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -95,6 +103,13 @@ export function CameraIntelligencePanel({
   const modelRef = useRef<CocoSsdModel | null>(null);
   const ocrWorkerRef = useRef<OcrWorker | null>(null);
   const ocrRunningRef = useRef(false);
+  // Set when something wants the OCR worker torn down (deactivate, unmount)
+  // while a recognize() call is still in flight -- terminating mid-request
+  // is exactly what crashes (tesseract.js nulls its internal worker
+  // reference on terminate(), and the in-flight job's next internal step
+  // then tries to message a worker that's gone). runOcrLoop's `finally`
+  // performs the deferred termination once it's actually safe.
+  const pendingOcrTerminateRef = useRef<OcrWorker | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
@@ -126,18 +141,59 @@ export function CameraIntelligencePanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Pauses/resumes just the OCR polling (not the camera stream, detection,
+  // motion tracking, or an in-progress recording -- none of those have a
+  // worker-lifecycle race, and pausing the render loop specifically would
+  // freeze a recording that's actively capturing from the canvas) whenever
+  // this panel's own tab stops being the one showing, or the camera itself
+  // isn't live. This is also what stops OCR from being attempted at all
+  // while backgrounded, rather than just surviving it if attempted.
+  useEffect(() => {
+    const isCameraOn = state === "live" || state === "recording" || state === "saving";
+    if (isTabActive && isCameraOn) {
+      startOcrInterval();
+    } else {
+      stopOcrInterval();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isTabActive, state]);
+
   function cleanup() {
     if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current);
     if (detectionIntervalIdRef.current) window.clearInterval(detectionIntervalIdRef.current);
     if (motionIntervalIdRef.current) window.clearInterval(motionIntervalIdRef.current);
-    if (ocrIntervalIdRef.current) window.clearInterval(ocrIntervalIdRef.current);
+    stopOcrInterval();
     if (elapsedIntervalIdRef.current) window.clearInterval(elapsedIntervalIdRef.current);
     recorderRef.current?.stop();
     streamRef.current?.getTracks().forEach((t) => t.stop());
     streamRef.current = null;
     prevFrameRef.current = null;
-    ocrWorkerRef.current?.terminate();
+    terminateOcrWorker();
+  }
+
+  function stopOcrInterval() {
+    if (ocrIntervalIdRef.current) {
+      window.clearInterval(ocrIntervalIdRef.current);
+      ocrIntervalIdRef.current = null;
+    }
+  }
+
+  function startOcrInterval() {
+    if (ocrIntervalIdRef.current || !ocrWorkerRef.current) return;
+    ocrIntervalIdRef.current = window.setInterval(runOcrLoop, OCR_INTERVAL_MS);
+  }
+
+  // Never terminates a worker that's mid-recognize() -- see the
+  // pendingOcrTerminateRef comment above for why that crashes.
+  function terminateOcrWorker() {
+    const worker = ocrWorkerRef.current;
+    if (!worker) return;
     ocrWorkerRef.current = null;
+    if (ocrRunningRef.current) {
+      pendingOcrTerminateRef.current = worker;
+    } else {
+      worker.terminate().catch(() => {});
+    }
   }
 
   function renderLoop() {
@@ -318,6 +374,12 @@ export function CameraIntelligencePanel({
       octx.drawImage(video, 0, 0, OCR_SAMPLE_WIDTH, OCR_SAMPLE_HEIGHT);
 
       const result = await worker.recognize(ocrCanvas);
+
+      // The worker may have been torn down (deactivated, unmounted) while
+      // this call was in flight -- discard a late result rather than acting
+      // on a plate match for a session that's already gone.
+      if (ocrWorkerRef.current !== worker) return;
+
       const candidates = result.data.text
         .split(/\s+/)
         .map((t) => t.trim())
@@ -325,12 +387,16 @@ export function CameraIntelligencePanel({
 
       if (candidates.length > 0) {
         const match = await findCaseByPlate(candidates);
-        if (match) setPlateMatch(match);
+        if (ocrWorkerRef.current === worker && match) setPlateMatch(match);
       }
     } catch (err) {
       console.error("[CameraIntelligence] Plate OCR error:", err);
     } finally {
       ocrRunningRef.current = false;
+      if (pendingOcrTerminateRef.current) {
+        pendingOcrTerminateRef.current.terminate().catch(() => {});
+        pendingOcrTerminateRef.current = null;
+      }
     }
   }
 
@@ -413,9 +479,9 @@ export function CameraIntelligencePanel({
     animationFrameIdRef.current = requestAnimationFrame(renderLoop);
     detectionIntervalIdRef.current = window.setInterval(runDetectionLoop, DETECTION_INTERVAL_MS);
     motionIntervalIdRef.current = window.setInterval(runMotionLoop, MOTION_INTERVAL_MS);
-    if (ocrWorkerRef.current) {
-      ocrIntervalIdRef.current = window.setInterval(runOcrLoop, OCR_INTERVAL_MS);
-    }
+    // OCR itself is started by the isTabActive/state effect below (it fires
+    // once this state update lands) -- keeps "should OCR be running right
+    // now" decided in one place instead of duplicated here too.
   }
 
   function handleDeactivate() {
@@ -525,7 +591,13 @@ export function CameraIntelligencePanel({
             <Camera className="h-4.5 w-4.5" />
           </div>
           <div>
-            <h2 className="text-sm font-semibold text-foreground">Camera Intelligence</h2>
+            <Bilingual
+              as="h2"
+              en="Camera Intelligence"
+              hi="कैमरा इंटेलिजेंस"
+              className="text-sm font-semibold text-foreground"
+              hiClassName="ml-1.5 text-xs font-normal text-muted"
+            />
             <p className="text-xs text-muted">
               Live object, motion &amp; plate detection from a connected camera
             </p>
@@ -535,19 +607,19 @@ export function CameraIntelligencePanel({
         {state === "idle" || state === "error" ? (
           <button
             onClick={handleActivate}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-all hover:bg-accent-strong active:scale-[0.98]"
           >
             <Camera className="h-3.5 w-3.5" />
-            Activate Camera
+            <Bilingual en="Activate Camera" hi="कैमरा सक्रिय करें" />
           </button>
         ) : (
           <button
             onClick={handleDeactivate}
             disabled={state === "recording" || state === "saving"}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background-elevated px-3 py-2 text-sm font-medium text-foreground transition-colors hover:border-priority-high/50 disabled:opacity-50"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border bg-background-elevated px-3 py-2 text-sm font-medium text-foreground transition-all hover:border-priority-high/50 active:scale-[0.98] disabled:opacity-50"
           >
             <X className="h-3.5 w-3.5" />
-            Deactivate
+            <Bilingual en="Deactivate" hi="निष्क्रिय करें" />
           </button>
         )}
       </div>
@@ -587,7 +659,7 @@ export function CameraIntelligencePanel({
                 matches{" "}
                 <Link
                   href={`/officer/cases/${plateMatch.complaintId}`}
-                  className="font-medium underline transition-colors hover:text-priority-high/80"
+                  className="font-medium underline transition-all hover:text-priority-high/80 active:scale-[0.98]"
                 >
                   &quot;{plateMatch.title}&quot;
                 </Link>{" "}
@@ -595,7 +667,7 @@ export function CameraIntelligencePanel({
               </p>
               <button
                 onClick={() => setPlateMatch(null)}
-                className="shrink-0 text-priority-high/70 transition-colors hover:text-priority-high"
+                className="shrink-0 text-priority-high/70 transition-all hover:text-priority-high active:scale-[0.98]"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -637,10 +709,10 @@ export function CameraIntelligencePanel({
                 </span>
                 <button
                   onClick={handleStopRecording}
-                  className="inline-flex items-center gap-1.5 rounded-lg bg-priority-high px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-priority-high/90"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-priority-high px-3 py-2 text-sm font-medium text-white transition-all hover:bg-priority-high/90 active:scale-[0.98]"
                 >
                   <Square className="h-3.5 w-3.5" />
-                  Stop Recording
+                  <Bilingual en="Stop Recording" hi="रिकॉर्डिंग बंद करें" />
                 </button>
               </div>
             ) : state === "saving" ? (
@@ -651,10 +723,10 @@ export function CameraIntelligencePanel({
             ) : (
               <button
                 onClick={handleStartRecording}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-strong"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-white transition-all hover:bg-accent-strong active:scale-[0.98]"
               >
                 <Video className="h-3.5 w-3.5" />
-                Start Recording
+                <Bilingual en="Start Recording" hi="रिकॉर्डिंग शुरू करें" />
               </button>
             )}
           </div>

@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import {
-  LifeBuoy,
   Sparkles,
   User,
   Send,
@@ -16,6 +15,7 @@ import {
 import { CallEmergencyButton } from "../dashboard/call-emergency-button";
 import { safetyAssistantTurn } from "./actions";
 import { Bilingual } from "@/components/bilingual";
+import { SafetyAssistantIllustration } from "@/components/illustrations/safety-assistant-illustration";
 
 type Message = { role: "assistant" | "user"; content: string; isDangerAlert?: boolean };
 
@@ -81,7 +81,7 @@ export function SafetyAssistantChat() {
       <div className="w-full max-w-2xl">
         <Link
           href="/civilian/dashboard"
-          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
+          className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-all hover:text-foreground active:scale-[0.98]"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           <Bilingual en="Back to dashboard" hi="डैशबोर्ड पर वापस जाएं" />
@@ -89,9 +89,7 @@ export function SafetyAssistantChat() {
 
         <div className="rounded-2xl border border-border bg-background-elevated p-8">
           <div className="mb-6 flex flex-col items-center text-center">
-            <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-warm-accent/15 text-warm-accent">
-              <LifeBuoy className="h-6 w-6" />
-            </div>
+            <SafetyAssistantIllustration className="pop-in mb-3 h-20 w-20" />
             <Bilingual
               as="h1"
               en="Safety Assistant"
@@ -200,7 +198,7 @@ export function SafetyAssistantChat() {
             <button
               type="submit"
               disabled={pending || !input.trim()}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-warm-accent text-white transition-colors hover:bg-warm-accent/90 disabled:opacity-40"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-warm-accent text-white transition-all hover:bg-warm-accent/90 active:scale-[0.98] disabled:opacity-40"
             >
               <Send className="h-4 w-4" />
             </button>

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ShieldAlert, Siren, ArrowRight, Map } from "lucide-react";
 import { EmblemIcon } from "@/components/emblem-icon";
+import { NetworkMotif } from "@/components/illustrations/network-motif";
 import { Bilingual } from "@/components/bilingual";
 
 export default function Home() {
@@ -9,6 +10,10 @@ export default function Home() {
       {/* ambient glow accents */}
       <div className="pointer-events-none absolute -top-40 left-1/2 h-96 w-[40rem] -translate-x-1/2 rounded-full bg-accent/20 blur-[120px]" />
       <div className="pointer-events-none absolute bottom-0 right-0 h-72 w-72 rounded-full bg-accent/10 blur-[100px]" />
+      {/* Faint "citizens connected to officers" motif, echoing the tagline
+          below -- kept far enough back (low opacity, behind the cards) that
+          it reads as texture, not a competing focal point. */}
+      <NetworkMotif className="pointer-events-none absolute left-1/2 top-[30%] h-64 w-[36rem] -translate-x-1/2 opacity-[0.08]" />
 
       <div className="relative z-10 flex flex-col items-center text-center">
         <EmblemIcon className="h-16 w-16 text-accent-strong sm:h-20 sm:w-20" />
@@ -92,7 +97,7 @@ export default function Home() {
 
       <Link
         href="/safety-map"
-        className="relative z-10 mt-10 inline-flex items-center gap-2 rounded-full border border-border bg-background-elevated px-4 py-2 text-sm text-muted transition-colors hover:border-warm-accent/50 hover:text-warm-accent"
+        className="relative z-10 mt-10 inline-flex items-center gap-2 rounded-full border border-border bg-background-elevated px-4 py-2 text-sm text-muted transition-all hover:border-warm-accent/50 hover:text-warm-accent active:scale-[0.98]"
       >
         <Map className="h-4 w-4" />
         <Bilingual en="View the Public Safety Map" hi="सार्वजनिक सुरक्षा मानचित्र देखें" />
