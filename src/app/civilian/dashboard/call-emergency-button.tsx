@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { PhoneCall, Loader2 } from "lucide-react";
+import { Bilingual } from "@/components/bilingual";
 
 type CallState = "idle" | "connecting";
 
@@ -40,9 +41,17 @@ export function CallEmergencyButton() {
         )}
       </button>
       <div className="text-center">
-        <p className="text-sm font-semibold text-foreground">
-          {isConnecting ? "Connecting to 112..." : "Call 112"}
-        </p>
+        {isConnecting ? (
+          <p className="text-sm font-semibold text-foreground">Connecting to 112...</p>
+        ) : (
+          <Bilingual
+            as="p"
+            en="Call 112"
+            hi="112 पर कॉल करें"
+            className="text-sm font-semibold text-foreground"
+            hiClassName="block text-xs font-normal text-muted"
+          />
+        )}
         {!isConnecting && (
           <p className="text-xs text-muted">Directly calls emergency services</p>
         )}

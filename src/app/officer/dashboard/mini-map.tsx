@@ -1,5 +1,10 @@
 "use client";
 
+// IMPORTANT: leaflet touches `window` at import time, so this module can
+// never be evaluated during SSR. `'use client'` alone does NOT prevent that
+// (Next.js still SSRs client components by default) -- always import this
+// component via `next/dynamic(() => import('./mini-map'), { ssr: false })`
+// from wherever it's used, never as a plain top-level `import`.
 import { useEffect, useRef } from "react";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";

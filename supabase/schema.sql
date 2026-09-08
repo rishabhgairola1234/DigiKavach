@@ -422,3 +422,301 @@ create trigger link_related_complaints
   for each row
   when (new.extracted_data is distinct from old.extracted_data)
   execute procedure public.link_related_complaints();
+
+
+-- ============================================================================
+-- Step 10: multilingual complaint intake
+-- ============================================================================
+
+-- `description` always holds the English text that extraction/search/etc run
+-- against. When a civilian writes in another language, the app translates it
+-- before insert and keeps what they actually wrote here -- never discarded,
+-- and left null for the (common) case where the complaint was already in
+-- English, so "has an original" is a simple not-null check for the UI.
+alter table public.complaints add column if not exists original_language text;
+alter table public.complaints add column if not exists original_description text;
+
+-- No new grants or policies needed: these are just two more columns on a row
+-- civilians can already insert into (see the Step 4 "Civilians can file
+-- their own complaints" INSERT policy) and officers can already select from.
+
+
+-- ============================================================================
+-- Step 11: officer dashboard quality-of-life (search/filter/stats, notes)
+-- ============================================================================
+
+-- Search, filtering, and the stats row are all computed client/server-side
+-- from data already fetched -- no schema changes needed for those.
+
+-- Private investigation notes. No SELECT (or any) policy exists for civilians
+-- on purpose -- they must never see these, regardless of whose case it is.
+create table if not exists public.officer_notes (
+  id uuid primary key default gen_random_uuid(),
+  complaint_id uuid not null references public.complaints (id) on delete cascade,
+  officer_id uuid not null references auth.users (id) on delete cascade,
+  note_text text not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.officer_notes enable row level security;
+
+grant select, insert on public.officer_notes to authenticated;
+
+drop policy if exists "Officers can view all officer notes" on public.officer_notes;
+create policy "Officers can view all officer notes"
+  on public.officer_notes for select
+  using (public.is_officer());
+
+drop policy if exists "Officers can add officer notes" on public.officer_notes;
+create policy "Officers can add officer notes"
+  on public.officer_notes for insert
+  with check (public.is_officer() and officer_id = auth.uid());
+
+
+-- ============================================================================
+-- Step 12: real-time status-change notifications
+-- ============================================================================
+
+create table if not exists public.notifications (
+  id uuid primary key default gen_random_uuid(),
+  civilian_id uuid not null references auth.users (id) on delete cascade,
+  complaint_id uuid not null references public.complaints (id) on delete cascade,
+  message text not null,
+  is_read boolean not null default false,
+  created_at timestamptz not null default now()
+);
+
+alter table public.notifications enable row level security;
+
+grant select on public.notifications to authenticated;
+grant update (is_read) on public.notifications to authenticated;
+
+drop policy if exists "Civilians can view their own notifications" on public.notifications;
+create policy "Civilians can view their own notifications"
+  on public.notifications for select
+  using (auth.uid() = civilian_id);
+
+-- No INSERT policy, same reasoning as profiles/officer_notes: only the
+-- trigger below (security definer) ever writes a notification.
+drop policy if exists "Civilians can mark their own notifications as read" on public.notifications;
+create policy "Civilians can mark their own notifications as read"
+  on public.notifications for update
+  using (auth.uid() = civilian_id)
+  with check (auth.uid() = civilian_id);
+
+-- Fires on the existing officer status-update path (complaints.status change)
+-- with no app code changes required -- the database is what's watching here.
+create or replace function public.notify_status_change()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  if new.status is distinct from old.status then
+    insert into public.notifications (civilian_id, complaint_id, message)
+    values (
+      new.civilian_id,
+      new.id,
+      'Your complaint "' || new.title || '" status changed to ' ||
+        case new.status
+          when 'filed' then 'Filed'
+          when 'under_review' then 'Under Review'
+          when 'investigating' then 'Investigating'
+          when 'resolved' then 'Resolved'
+          when 'closed' then 'Closed'
+          else new.status
+        end
+    );
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists notify_status_change on public.complaints;
+create trigger notify_status_change
+  after update on public.complaints
+  for each row
+  when (new.status is distinct from old.status)
+  execute procedure public.notify_status_change();
+
+alter table public.notifications replica identity full;
+
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime' and schemaname = 'public' and tablename = 'notifications'
+  ) then
+    alter publication supabase_realtime add table public.notifications;
+  end if;
+end $$;
+
+
+-- ============================================================================
+-- Step 13: Camera Intelligence (webcam object/motion detection + recording)
+-- ============================================================================
+
+-- Separate bucket from civilian-facing "evidence" -- these are officer-
+-- generated recordings, not civilian-submitted evidence, and keeping them in
+-- their own bucket means the officer-only access rule can't accidentally leak
+-- through the civilian evidence bucket's path-based ownership policies.
+insert into storage.buckets (id, name, public)
+values ('camera-recordings', 'camera-recordings', false)
+on conflict (id) do nothing;
+
+drop policy if exists "Officers can upload camera recordings" on storage.objects;
+create policy "Officers can upload camera recordings"
+  on storage.objects for insert
+  with check (bucket_id = 'camera-recordings' and public.is_officer());
+
+drop policy if exists "Officers can view camera recordings" on storage.objects;
+create policy "Officers can view camera recordings"
+  on storage.objects for select
+  using (bucket_id = 'camera-recordings' and public.is_officer());
+
+create table if not exists public.camera_recordings (
+  id uuid primary key default gen_random_uuid(),
+  complaint_id uuid not null references public.complaints (id) on delete cascade,
+  officer_id uuid not null references auth.users (id) on delete cascade,
+  file_path text not null,
+  detected_objects jsonb not null default '[]'::jsonb,
+  motion_timeline jsonb not null default '[]'::jsonb,
+  duration_seconds numeric not null,
+  created_at timestamptz not null default now()
+);
+
+alter table public.camera_recordings enable row level security;
+
+grant select, insert on public.camera_recordings to authenticated;
+
+-- Officer-only in both directions -- no policy at all exists for civilians,
+-- so RLS blocks them from ever seeing a recording exists, let alone playing
+-- one back.
+drop policy if exists "Officers can view all camera recordings" on public.camera_recordings;
+create policy "Officers can view all camera recordings"
+  on public.camera_recordings for select
+  using (public.is_officer());
+
+drop policy if exists "Officers can add camera recordings" on public.camera_recordings;
+create policy "Officers can add camera recordings"
+  on public.camera_recordings for insert
+  with check (public.is_officer() and officer_id = auth.uid());
+
+
+-- ============================================================================
+-- Step 14: plate OCR cross-reference, key-moment highlights, integrity hash
+-- ============================================================================
+
+-- Plate OCR cross-referencing reuses the existing complaints/extracted_data
+-- read path plus the same plate-normalization rule as the Step 9 trigger
+-- (implemented in src/lib/plate-matching.ts) -- no schema change needed for
+-- that part.
+
+-- Thumbnails + reason captured automatically while recording, whenever
+-- motion crosses into the "high" band or a not-recently-seen object class
+-- appears. Table-level grants already cover new columns (no column-scoped
+-- grant was used on this table), so no new GRANT statements are needed.
+alter table public.camera_recordings add column if not exists key_moments jsonb not null default '[]'::jsonb;
+
+-- SHA-256 of the uploaded video file, computed client-side via the Web
+-- Crypto API before upload, so officers/courts can later verify the saved
+-- recording hasn't been altered since capture.
+alter table public.camera_recordings add column if not exists file_hash text;
+
+
+-- ============================================================================
+-- Step 15: evidence sufficiency, voice filing, public safety heatmap
+-- ============================================================================
+
+-- Evidence sufficiency (Gemini, manually triggered) and voice-based filing
+-- (browser Web Speech API) need no schema changes -- they read/write columns
+-- that already exist.
+
+-- Best-effort geocoding of a complaint's free-text location, done once at
+-- filing time (src/lib/geocoding.ts, via the free Nominatim API -- no key).
+-- Null when geocoding fails or hasn't run; failure never blocks filing.
+alter table public.complaints add column if not exists latitude double precision;
+alter table public.complaints add column if not exists longitude double precision;
+
+-- The public safety heatmap needs to read incident locations across EVERY
+-- civilian's complaints, which the existing complaints RLS deliberately does
+-- not allow (a civilian may only select their own rows, per Step 4). Rather
+-- than loosen that table's RLS, this view exposes only the columns that are
+-- genuinely safe to publish -- no title, no description, no civilian_id, no
+-- name -- and nothing else. Views run with the privileges of their owner by
+-- default (not the querying role), which is what lets this view read every
+-- row while the underlying table's RLS stays exactly as restrictive as
+-- before for direct table access.
+create or replace view public.safety_map_points as
+select
+  id,
+  latitude,
+  longitude,
+  extracted_data ->> 'category' as category,
+  created_at
+from public.complaints
+where latitude is not null and longitude is not null;
+
+grant select on public.safety_map_points to authenticated, anon;
+
+
+-- ============================================================================
+-- Step 16: automated officer case assignment/routing
+-- ============================================================================
+
+alter table public.complaints add column if not exists assigned_officer_id uuid references auth.users (id);
+
+-- No new grant needed to read it: the existing table-level
+-- `grant select on public.complaints to authenticated` (Step 4) already
+-- covers every column, and it's already readable by officers under the
+-- Step 6 "Officers can view all complaints" policy.
+
+-- Assigns the officer with the fewest currently active ("under_review" or
+-- "investigating") cases the moment AI extraction completes -- deterministic
+-- load-balancing, no AI call. Only ever sets the column once per complaint
+-- (the IS NULL check), so a later extracted_data change never reassigns it.
+-- Security definer so it can see every officer's profile and every
+-- complaint's current assignment regardless of the caller's own RLS access --
+-- the civilian whose "update extracted_data" statement actually fires this
+-- trigger has no visibility into other people's profiles or complaints.
+create or replace function public.assign_officer_to_complaint()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+declare
+  chosen_officer uuid;
+begin
+  if new.extracted_data is null or new.assigned_officer_id is not null then
+    return new;
+  end if;
+
+  select p.id into chosen_officer
+  from public.profiles p
+  left join (
+    select assigned_officer_id, count(*) as active_count
+    from public.complaints
+    where status in ('under_review', 'investigating')
+      and assigned_officer_id is not null
+    group by assigned_officer_id
+  ) workload on workload.assigned_officer_id = p.id
+  where p.role = 'officer'
+  order by coalesce(workload.active_count, 0) asc, p.created_at asc
+  limit 1;
+
+  new.assigned_officer_id := chosen_officer;
+  return new;
+end;
+$$;
+
+-- BEFORE (not AFTER, unlike link_related_complaints) because this needs to
+-- mutate NEW directly rather than issue a separate UPDATE. Column-level
+-- privilege checks apply only to the columns named in the civilian's own
+-- UPDATE statement (extracted_data), not to columns a BEFORE trigger
+-- separately assigns on NEW -- so no new column grant is needed here either.
+drop trigger if exists assign_officer_to_complaint on public.complaints;
+create trigger assign_officer_to_complaint
+  before update on public.complaints
+  for each row
+  when (new.extracted_data is distinct from old.extracted_data)
+  execute procedure public.assign_officer_to_complaint();

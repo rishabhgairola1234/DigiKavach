@@ -9,10 +9,18 @@ import {
   MapPin,
   CalendarClock,
   CheckCircle2,
+  ChevronRight,
+  ShieldAlert,
+  MessageCircle,
+  LifeBuoy,
 } from "lucide-react";
 import { StatusBadge } from "@/components/badges";
+import { StatusTracker } from "@/components/status-tracker";
+import { EmblemIcon } from "@/components/emblem-icon";
+import { Bilingual } from "@/components/bilingual";
 import { SosButton } from "./sos-button";
 import { CallEmergencyButton } from "./call-emergency-button";
+import { NotificationBell } from "./notification-bell";
 import type { ComplaintStatus } from "@/lib/complaints";
 
 export default async function CivilianDashboardPage({
@@ -43,21 +51,40 @@ export default async function CivilianDashboardPage({
     .eq("civilian_id", user.id)
     .order("created_at", { ascending: false });
 
+  const { data: notifications } = await supabase
+    .from("notifications")
+    .select("id, complaint_id, message, is_read, created_at")
+    .eq("civilian_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(20);
+
   return (
     <div className="flex flex-1 flex-col bg-background bg-grid px-6 py-10">
       <header className="mx-auto flex w-full max-w-4xl items-center justify-between">
-        <div>
-          <p className="text-sm text-muted">Welcome back,</p>
-          <h1 className="text-xl font-semibold text-foreground">
-            {profile?.full_name || user.email}
-          </h1>
+        <div className="flex items-center gap-3">
+          <EmblemIcon className="h-8 w-8 shrink-0 text-warm-accent" />
+          <div>
+            <Bilingual
+              as="p"
+              en="Welcome back,"
+              hi="आपका स्वागत है"
+              className="text-sm text-muted"
+              hiClassName="text-xs text-muted/80"
+            />
+            <h1 className="text-xl font-semibold text-foreground">
+              {profile?.full_name || user.email}
+            </h1>
+          </div>
         </div>
-        <form action={signOut}>
-          <button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted transition-colors hover:border-warm-accent/50 hover:text-warm-accent">
-            <LogOut className="h-4 w-4" />
-            Sign out
-          </button>
-        </form>
+        <div className="flex items-center gap-3">
+          <NotificationBell initialNotifications={notifications ?? []} />
+          <form action={signOut}>
+            <button className="inline-flex items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm text-muted transition-colors hover:border-warm-accent/50 hover:text-warm-accent">
+              <LogOut className="h-4 w-4" />
+              <Bilingual en="Sign out" hi="साइन आउट" />
+            </button>
+          </form>
+        </div>
       </header>
 
       <main className="mx-auto mt-8 w-full max-w-4xl">
@@ -74,17 +101,44 @@ export default async function CivilianDashboardPage({
           </div>
         )}
 
-        <div className="mb-6 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">
-            Your Complaints
-          </h2>
-          <Link
-            href="/civilian/complaints/new"
-            className="inline-flex items-center gap-1.5 rounded-lg bg-warm-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-warm-accent/90"
-          >
-            <FilePlus2 className="h-4 w-4" />
-            File a Complaint
-          </Link>
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+          <Bilingual
+            as="h2"
+            en="Your Complaints"
+            hi="आपकी शिकायतें"
+            className="text-lg font-semibold text-foreground"
+            hiClassName="block text-xs font-normal text-muted"
+          />
+          <div className="flex items-center gap-3">
+            <Link
+              href="/safety-map"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-warm-accent/50 hover:text-warm-accent"
+            >
+              <ShieldAlert className="h-4 w-4" />
+              <Bilingual en="Safety Map" hi="सुरक्षा मानचित्र" />
+            </Link>
+            <Link
+              href="/civilian/safety-assistant"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted transition-colors hover:border-warm-accent/50 hover:text-warm-accent"
+            >
+              <LifeBuoy className="h-4 w-4" />
+              <Bilingual en="Safety Assistant" hi="सुरक्षा सहायक" />
+            </Link>
+            <Link
+              href="/civilian/complaints/chat"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-warm-accent/40 bg-warm-accent/10 px-4 py-2 text-sm font-semibold text-warm-accent transition-colors hover:bg-warm-accent/20"
+            >
+              <MessageCircle className="h-4 w-4" />
+              <Bilingual en="File via Chat" hi="चैट द्वारा दर्ज करें" />
+            </Link>
+            <Link
+              href="/civilian/complaints/new"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-warm-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-warm-accent/90"
+            >
+              <FilePlus2 className="h-4 w-4" />
+              <Bilingual en="File a Complaint" hi="शिकायत दर्ज करें" />
+            </Link>
+          </div>
         </div>
 
         {!complaints || complaints.length === 0 ? (
@@ -92,9 +146,13 @@ export default async function CivilianDashboardPage({
             <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-warm-accent/15 text-warm-accent">
               <FileText className="h-6 w-6" />
             </div>
-            <h3 className="text-lg font-semibold text-foreground">
-              No complaints filed yet
-            </h3>
+            <Bilingual
+              as="h3"
+              en="No complaints filed yet"
+              hi="अभी तक कोई शिकायत दर्ज नहीं"
+              className="text-lg font-semibold text-foreground"
+              hiClassName="block text-sm font-normal text-muted"
+            />
             <p className="mt-2 max-w-sm text-sm text-muted">
               When you report an incident, it&apos;ll show up here so you can
               track its status.
@@ -105,29 +163,38 @@ export default async function CivilianDashboardPage({
             {complaints.map((complaint) => {
               const status = complaint.status as ComplaintStatus;
               return (
-                <li
-                  key={complaint.id}
-                  className="rounded-xl border border-border bg-background-elevated p-5"
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <h3 className="font-medium text-foreground">
-                      {complaint.title}
-                    </h3>
-                    <StatusBadge status={status} />
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-muted">
-                    <span className="inline-flex items-center gap-1.5">
-                      <CalendarClock className="h-3.5 w-3.5" />
-                      {new Date(complaint.incident_datetime).toLocaleString(
-                        "en-IN",
-                        { dateStyle: "medium", timeStyle: "short" }
-                      )}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {complaint.location}
-                    </span>
-                  </div>
+                <li key={complaint.id}>
+                  <Link
+                    href={`/civilian/complaints/${complaint.id}`}
+                    className="block rounded-xl border border-border bg-background-elevated p-5 transition-colors hover:border-warm-accent/40"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <h3 className="font-medium text-foreground">
+                        {complaint.title}
+                      </h3>
+                      <StatusBadge status={status} bilingual />
+                    </div>
+                    <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-xs text-muted">
+                      <span className="inline-flex items-center gap-1.5">
+                        <CalendarClock className="h-3.5 w-3.5" />
+                        {new Date(complaint.incident_datetime).toLocaleString(
+                          "en-IN",
+                          { dateStyle: "medium", timeStyle: "short" }
+                        )}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {complaint.location}
+                      </span>
+                    </div>
+                    <div className="mt-4">
+                      <StatusTracker status={status} />
+                    </div>
+                    <div className="mt-4 flex items-center justify-end gap-1 text-xs font-medium text-warm-accent">
+                      <Bilingual en="View Details & Evidence" hi="विवरण और साक्ष्य देखें" />
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </div>
+                  </Link>
                 </li>
               );
             })}

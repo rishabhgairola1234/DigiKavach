@@ -1,12 +1,22 @@
 "use client";
 
 import { useEffect, useState, useTransition } from "react";
+import dynamic from "next/dynamic";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 import { Siren, ShieldCheck, MapPin, ExternalLink, Loader2 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { formatRelativeTime } from "@/lib/time";
-import { MiniMap } from "./mini-map";
 import { resolveSosAlert } from "./sos-actions";
+
+// Leaflet touches `window` at import time, so it can never be part of the
+// server-rendered bundle -- `ssr: false` is what actually guarantees that
+// (a plain top-level `import` would still get evaluated during SSR despite
+// mini-map.tsx being a 'use client' file; 'use client' only controls where a
+// component *hydrates*, not whether its module is evaluated on the server).
+const MiniMap = dynamic(() => import("./mini-map").then((mod) => mod.MiniMap), {
+  ssr: false,
+  loading: () => <div className="h-44 w-full animate-pulse rounded-lg bg-border/40" />,
+});
 
 export type SosAlert = {
   id: string;
@@ -30,6 +40,19 @@ type SosAlertRow = {
 export function SosAlertsPanel({ initialAlerts }: { initialAlerts: SosAlert[] }) {
   const [alerts, setAlerts] = useState<SosAlert[]>(initialAlerts);
   const [, forceTick] = useState(0);
+
+  // formatRelativeTime() depends on the current wall-clock time, which is
+  // never the same between the server render and the moment the client
+  // hydrates a few hundred ms (or seconds) later -- rendering it during SSR
+  // guarantees a hydration mismatch ("4h ago" vs "3h ago"). `mounted` stays
+  // false through the server render and the first client render (which React
+  // requires to match exactly), then flips true once mounted, so the real
+  // relative time only ever appears in a normal post-hydration client update.
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Ticks the relative "Xs/m/h ago" timestamps without needing new data.
   useEffect(() => {
@@ -109,7 +132,7 @@ export function SosAlertsPanel({ initialAlerts }: { initialAlerts: SosAlert[] })
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {alerts.map((alert) => (
-            <AlertCard key={alert.id} alert={alert} />
+            <AlertCard key={alert.id} alert={alert} mounted={mounted} />
           ))}
         </ul>
       )}
@@ -117,7 +140,7 @@ export function SosAlertsPanel({ initialAlerts }: { initialAlerts: SosAlert[] })
   );
 }
 
-function AlertCard({ alert }: { alert: SosAlert }) {
+function AlertCard({ alert, mounted }: { alert: SosAlert; mounted: boolean }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
@@ -128,7 +151,7 @@ function AlertCard({ alert }: { alert: SosAlert }) {
         <div className="flex items-start justify-between gap-2">
           <p className="font-medium text-foreground">{alert.civilianName}</p>
           <span className="shrink-0 text-xs text-muted">
-            {formatRelativeTime(alert.created_at)}
+            {mounted ? formatRelativeTime(alert.created_at) : null}
           </span>
         </div>
         <a

@@ -80,6 +80,25 @@ body {
   animation: sos-pulse 2.2s ease-out infinite;
 }
 
+/* Overdue case badge: same soft-radiating idea as the SOS pulse, but amber --
+   red stays reserved for the SOS button and priority-high badges, so an
+   overdue flag doesn't get visually confused with an active emergency. */
+@keyframes overdue-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(245, 158, 11, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+  }
+}
+
+.overdue-pulse {
+  animation: overdue-pulse 2.2s ease-out infinite;
+}
+
 /* Shared entrance transitions -- used everywhere something appears instead of
    snapping into existence: page navigations, popped-in cards/messages, and
    loading indicators. Kept to two variants so motion stays consistent across

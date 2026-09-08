@@ -1,11 +1,13 @@
 export function Field({
   label,
+  labelHi,
   name,
   type,
   autoComplete,
   focusClassName = "focus:border-accent",
 }: {
   label: string;
+  labelHi?: string;
   name: string;
   type: string;
   autoComplete?: string;
@@ -13,7 +15,10 @@ export function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5 text-sm">
-      <span className="font-medium text-foreground">{label}</span>
+      <span className="font-medium text-foreground">
+        {label}
+        {labelHi && <span className="ml-1.5 font-normal text-muted">{labelHi}</span>}
+      </span>
       <input
         name={name}
         type={type}

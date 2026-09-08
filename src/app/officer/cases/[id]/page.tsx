@@ -1,14 +1,25 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { StatusBadge, PriorityBadge, LinkedCasesBadge } from "@/components/badges";
+import { StatusBadge, PriorityBadge, LinkedCasesBadge, OverdueBadge } from "@/components/badges";
+import { isCaseOverdue } from "@/lib/overdue";
 import { StatusSelect } from "./status-select";
 import { CopilotPanel } from "./copilot-panel";
+import { FirDraftPanel } from "./fir-draft-panel";
+import { OriginalDescriptionToggle } from "./original-description";
+import { LegalSectionsPanel } from "./legal-sections-panel";
+import { EvidenceSufficiencyPanel } from "./evidence-sufficiency-panel";
+import { NextStepsPanel } from "./next-steps-panel";
+import { NotesPanel, type OfficerNote } from "./notes-panel";
+import { CameraIntelligencePanel } from "./camera-intelligence-panel";
+import { RecordingsList, type CameraRecording } from "./recordings-list";
 import { evidenceDisplayName } from "@/lib/evidence";
 import { otherComplaintId } from "@/lib/case-links";
+import { parseMatchedOn, encodeEntitySlug } from "@/lib/dossier";
 import {
   ArrowLeft,
   User,
+  UserCheck,
   MapPin,
   CalendarClock,
   Users,
@@ -20,6 +31,7 @@ import {
   FileText,
   ExternalLink,
   Link2,
+  CheckCircle2,
 } from "lucide-react";
 import {
   CATEGORY_LABEL,
@@ -52,7 +64,7 @@ export default async function CaseDetailPage({
   const { data: complaint } = await supabase
     .from("complaints")
     .select(
-      "id, title, description, civilian_id, status, incident_datetime, location, extracted_data, created_at"
+      "id, title, description, original_language, original_description, civilian_id, status, incident_datetime, location, extracted_data, assigned_officer_id, created_at"
     )
     .eq("id", id)
     .single();
@@ -61,18 +73,65 @@ export default async function CaseDetailPage({
 
   const status = complaint.status as ComplaintStatus;
   const extractedData = complaint.extracted_data as ExtractedComplaintData | null;
+  const overdue = isCaseOverdue({
+    status,
+    extracted_data: extractedData,
+    created_at: complaint.created_at,
+  });
 
-  const { data: civilianProfile } = await supabase
-    .from("profiles")
-    .select("full_name, email")
-    .eq("id", complaint.civilian_id)
-    .single();
+  // None of these depend on each other -- fetched together to avoid
+  // needless round-trip latency.
+  const [
+    { data: civilianProfile },
+    { data: assignedOfficerProfile },
+    { data: evidenceRows },
+    { data: linkRows },
+    { data: noteRows },
+    { data: recordingRows },
+  ] = await Promise.all([
+    supabase.from("profiles").select("full_name, email").eq("id", complaint.civilian_id).single(),
+    complaint.assigned_officer_id
+      ? supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", complaint.assigned_officer_id)
+          .single()
+      : Promise.resolve({ data: null }),
+    supabase
+      .from("evidence")
+      .select("id, file_path, file_type, uploaded_at")
+      .eq("complaint_id", complaint.id)
+      .order("uploaded_at", { ascending: true }),
+    supabase
+      .from("complaint_links")
+      .select("id, complaint_id_a, complaint_id_b, matched_on, created_at")
+      .or(`complaint_id_a.eq.${complaint.id},complaint_id_b.eq.${complaint.id}`),
+    supabase
+      .from("officer_notes")
+      .select("id, officer_id, note_text, created_at")
+      .eq("complaint_id", complaint.id)
+      .order("created_at", { ascending: true }),
+    supabase
+      .from("camera_recordings")
+      .select(
+        "id, file_path, detected_objects, motion_timeline, key_moments, duration_seconds, file_hash, created_at"
+      )
+      .eq("complaint_id", complaint.id)
+      .order("created_at", { ascending: false }),
+  ]);
 
-  const { data: evidenceRows } = await supabase
-    .from("evidence")
-    .select("id, file_path, file_type, uploaded_at")
-    .eq("complaint_id", complaint.id)
-    .order("uploaded_at", { ascending: true });
+  const officerIds = [...new Set((noteRows ?? []).map((n) => n.officer_id))];
+  const { data: noteAuthors } = officerIds.length
+    ? await supabase.from("profiles").select("id, full_name, email").in("id", officerIds)
+    : { data: [] };
+  const officerNameById = new Map((noteAuthors ?? []).map((p) => [p.id, p.full_name || p.email]));
+
+  const notes: OfficerNote[] = (noteRows ?? []).map((n) => ({
+    id: n.id,
+    note_text: n.note_text,
+    created_at: n.created_at,
+    officerName: officerNameById.get(n.officer_id) ?? "Unknown officer",
+  }));
 
   const evidence = await Promise.all(
     (evidenceRows ?? []).map(async (row) => {
@@ -83,15 +142,42 @@ export default async function CaseDetailPage({
     })
   );
 
-  const { data: linkRows } = await supabase
-    .from("complaint_links")
-    .select("id, complaint_id_a, complaint_id_b, matched_on, created_at")
-    .or(`complaint_id_a.eq.${complaint.id},complaint_id_b.eq.${complaint.id}`);
+  const recordings: CameraRecording[] = await Promise.all(
+    (recordingRows ?? []).map(async (row) => {
+      const { data: signed } = await supabase.storage
+        .from("camera-recordings")
+        .createSignedUrl(row.file_path, 60 * 60);
+      return {
+        id: row.id,
+        url: signed?.signedUrl ?? null,
+        detected_objects: row.detected_objects as { label: string; timestamp: number }[],
+        motion_timeline: row.motion_timeline as { timestamp: number; intensity: number }[],
+        key_moments: row.key_moments as {
+          timestamp: number;
+          thumbnail_data_url: string;
+          reason: string;
+        }[],
+        duration_seconds: Number(row.duration_seconds),
+        file_hash: row.file_hash,
+        created_at: row.created_at,
+      };
+    })
+  );
 
   const linkedCaseIds = (linkRows ?? []).map((l) => otherComplaintId(l, complaint.id));
   const { data: linkedComplaints } = linkedCaseIds.length
     ? await supabase.from("complaints").select("id, title").in("id", linkedCaseIds)
     : { data: [] };
+
+  const assignedOfficerName = complaint.assigned_officer_id
+    ? assignedOfficerProfile?.full_name || assignedOfficerProfile?.email || "Unknown officer"
+    : null;
+
+  // Pure logic, no AI call: a case reads as ready for closure review once
+  // it's actively being investigated, extraction succeeded, and at least one
+  // piece of evidence backs it up. Suggestion only -- the officer still picks
+  // the actual status via the dropdown below.
+  const readyForClosure = status === "investigating" && extractedData !== null && evidence.length > 0;
 
   const linkedCaseTitleById = new Map((linkedComplaints ?? []).map((c) => [c.id, c.title]));
   const linkedCases = (linkRows ?? []).map((l) => {
@@ -126,6 +212,10 @@ export default async function CaseDetailPage({
                   {civilianProfile?.full_name || civilianProfile?.email || "Unknown"}
                 </span>
                 <span className="inline-flex items-center gap-1.5">
+                  <UserCheck className="h-4 w-4" />
+                  {assignedOfficerName ? `Assigned to ${assignedOfficerName}` : "Unassigned"}
+                </span>
+                <span className="inline-flex items-center gap-1.5">
                   <CalendarClock className="h-4 w-4" />
                   {new Date(complaint.incident_datetime).toLocaleString("en-IN", {
                     dateStyle: "medium",
@@ -145,16 +235,39 @@ export default async function CaseDetailPage({
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
+              {overdue && <OverdueBadge />}
               <LinkedCasesBadge count={linkedCases.length} />
               <PriorityBadge priority={extractedData?.priority} />
               <StatusBadge status={status} />
             </div>
           </div>
 
-          <div className="mt-6 flex items-center gap-3 border-y border-border py-4">
+          <div className="mt-6 flex flex-wrap items-center gap-3 border-y border-border py-4">
             <span className="text-sm font-medium text-foreground">Status:</span>
             <StatusSelect complaintId={complaint.id} status={status} />
+            {readyForClosure && (
+              <span className="pop-in inline-flex items-center gap-1.5 rounded-full border border-priority-low/40 bg-priority-low/15 px-3 py-1.5 text-xs font-semibold text-priority-low">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                Ready for Closure Review
+              </span>
+            )}
           </div>
+
+          {readyForClosure && (
+            <p className="pop-in -mt-2 mb-2 flex items-start gap-2 rounded-lg border border-priority-low/30 bg-priority-low/[0.06] px-3 py-2.5 text-sm text-muted">
+              <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-priority-low" />
+              This case is under investigation, has AI-extracted details, and at
+              least one piece of evidence — it may be ready to move to
+              Resolved or Closed. This is a suggestion only; use the status
+              dropdown above to decide.
+            </p>
+          )}
+
+          <LegalSectionsPanel complaintId={complaint.id} />
+
+          <EvidenceSufficiencyPanel complaintId={complaint.id} />
+
+          <NextStepsPanel complaintId={complaint.id} />
 
           <section className="mt-6">
             <h2 className="text-sm font-semibold text-foreground">
@@ -163,6 +276,12 @@ export default async function CaseDetailPage({
             <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-muted">
               {complaint.description}
             </p>
+            {complaint.original_description && (
+              <OriginalDescriptionToggle
+                language={complaint.original_language}
+                originalText={complaint.original_description}
+              />
+            )}
           </section>
 
           <section className="mt-8">
@@ -289,25 +408,45 @@ export default async function CaseDetailPage({
                 Linked Cases
               </h2>
               <ul className="mt-3 flex flex-col gap-2">
-                {linkedCases.map((lc) => (
-                  <li key={`${lc.id}-${lc.matchedOn}`}>
-                    <Link
-                      href={`/officer/cases/${lc.id}`}
-                      className="flex items-center justify-between gap-3 rounded-lg border border-priority-medium/30 bg-priority-medium/[0.06] px-3 py-2.5 text-sm transition-colors hover:border-priority-medium/60"
+                {linkedCases.map((lc) => {
+                  const entity = parseMatchedOn(lc.matchedOn);
+                  return (
+                    <li
+                      key={`${lc.id}-${lc.matchedOn}`}
+                      className="rounded-lg border border-priority-medium/30 bg-priority-medium/[0.06] px-3 py-2.5"
                     >
-                      <span className="flex flex-col">
-                        <span className="font-medium text-foreground">{lc.title}</span>
-                        <span className="text-xs text-muted">
-                          Matched on: {lc.matchedOn}
+                      <Link
+                        href={`/officer/cases/${lc.id}`}
+                        className="flex items-center justify-between gap-3 text-sm transition-colors hover:text-accent-strong"
+                      >
+                        <span className="flex flex-col">
+                          <span className="font-medium text-foreground">{lc.title}</span>
+                          <span className="text-xs text-muted">Matched on: {lc.matchedOn}</span>
                         </span>
-                      </span>
-                      <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted" />
-                    </Link>
-                  </li>
-                ))}
+                        <ExternalLink className="h-3.5 w-3.5 shrink-0 text-muted" />
+                      </Link>
+                      {entity && (
+                        <Link
+                          href={`/officer/dossier/${encodeEntitySlug(entity)}`}
+                          className="mt-1.5 inline-block text-xs font-medium text-accent-strong underline transition-colors hover:text-accent"
+                        >
+                          View Dossier
+                        </Link>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           )}
+
+          <CameraIntelligencePanel complaintId={complaint.id}>
+            <RecordingsList recordings={recordings} />
+          </CameraIntelligencePanel>
+
+          <FirDraftPanel complaintId={complaint.id} />
+
+          <NotesPanel complaintId={complaint.id} notes={notes} />
 
           <CopilotPanel complaintId={complaint.id} />
         </div>

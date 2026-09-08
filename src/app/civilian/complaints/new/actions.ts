@@ -3,6 +3,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { extractComplaintData } from "@/lib/gemini/extract-complaint";
+import { detectAndTranslateDescription } from "@/lib/gemini/translate-description";
+import { findLikelyDuplicate } from "@/lib/duplicate-detection";
+import { geocodeLocation } from "@/lib/geocoding";
 
 export type FileComplaintState = { error: string | null };
 
@@ -64,14 +67,32 @@ export async function fileComplaint(
     return { error: "Only civilian accounts can file complaints." };
   }
 
+  // Translation and geocoding are independent of each other -- run together
+  // rather than adding one's latency on top of the other. Both are
+  // best-effort: a failed geocode just means this complaint won't appear on
+  // the public safety map, same fail-safe pattern as translation/extraction.
+  const [translation, geocoded] = await Promise.all([
+    detectAndTranslateDescription(description),
+    geocodeLocation(location),
+  ]);
+
+  const englishDescription =
+    translation && !translation.isEnglish ? translation.translatedText : description;
+  const originalLanguage = translation && !translation.isEnglish ? translation.language : null;
+  const originalDescription = translation && !translation.isEnglish ? description : null;
+
   const { data: complaint, error: insertError } = await supabase
     .from("complaints")
     .insert({
       civilian_id: user.id,
       title,
-      description,
+      description: englishDescription,
+      original_language: originalLanguage,
+      original_description: originalDescription,
       incident_datetime: incidentDate.toISOString(),
       location,
+      latitude: geocoded?.latitude ?? null,
+      longitude: geocoded?.longitude ?? null,
     })
     .select("id")
     .single();
@@ -111,7 +132,7 @@ export async function fileComplaint(
   // AI extraction runs after the complaint is safely saved, and its failure
   // (missing key, network error, bad response) must never block filing --
   // extractComplaintData already swallows its own errors and returns null.
-  const extractedData = await extractComplaintData(title, description);
+  const extractedData = await extractComplaintData(title, englishDescription);
 
   if (extractedData) {
     console.log(
@@ -137,4 +158,48 @@ export async function fileComplaint(
   }
 
   redirect("/civilian/dashboard?filed=1");
+}
+
+export type DuplicateCheckResult = {
+  duplicate: { title: string; createdAt: string } | null;
+};
+
+/**
+ * Pure keyword-overlap check against this civilian's own last-24h complaints
+ * -- no AI call, deterministic. Called from the filing form as the officer
+ * fills in title/description, purely informational: never blocks submission.
+ */
+export async function checkForDuplicateComplaint(
+  title: string,
+  description: string,
+  location: string
+): Promise<DuplicateCheckResult> {
+  if (!title.trim() || !description.trim()) {
+    return { duplicate: null };
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return { duplicate: null };
+  }
+
+  const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+
+  const { data: recentComplaints } = await supabase
+    .from("complaints")
+    .select("id, title, description, location, created_at")
+    .eq("civilian_id", user.id)
+    .gte("created_at", since);
+
+  const match = findLikelyDuplicate(recentComplaints ?? [], title, description, location);
+
+  if (!match) {
+    return { duplicate: null };
+  }
+
+  return { duplicate: { title: match.title, createdAt: match.created_at } };
 }

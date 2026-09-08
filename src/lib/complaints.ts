@@ -13,6 +13,17 @@ export const COMPLAINT_STATUS_LABEL: Record<ComplaintStatus, string> = {
   closed: "Closed",
 };
 
+// Hindi labels for the bilingual treatment on civilian-facing pages only --
+// the officer side keeps English-only labels, so these are separate exports
+// rather than baked into COMPLAINT_STATUS_LABEL itself.
+export const COMPLAINT_STATUS_LABEL_HI: Record<ComplaintStatus, string> = {
+  filed: "दर्ज",
+  under_review: "समीक्षाधीन",
+  investigating: "जांच जारी",
+  resolved: "सुलझाया गया",
+  closed: "बंद",
+};
+
 export const COMPLAINT_STATUS_BADGE_CLASSES: Record<ComplaintStatus, string> = {
   filed: "bg-muted/15 text-muted border-muted/30",
   under_review: "bg-priority-medium/15 text-priority-medium border-priority-medium/30",
@@ -53,6 +64,30 @@ export const CATEGORY_LABEL: Record<ComplaintCategory, string> = {
   harassment: "Harassment",
   property_damage: "Property Damage",
   other: "Other",
+};
+
+// Civilian-facing bilingual labels only, same reasoning as
+// COMPLAINT_STATUS_LABEL_HI above.
+export const CATEGORY_LABEL_HI: Record<ComplaintCategory, string> = {
+  theft: "चोरी",
+  assault: "हमला",
+  cybercrime: "साइबर अपराध",
+  harassment: "उत्पीड़न",
+  property_damage: "संपत्ति को नुकसान",
+  other: "अन्य",
+};
+
+// Literal hex values (not CSS vars) because these are read by canvas/Leaflet
+// drawing code, which can't resolve `var(--...)`. Reuses the app's existing
+// palette where it maps cleanly; cybercrime gets one new violet since there's
+// no existing token for it.
+export const CATEGORY_MAP_COLOR: Record<ComplaintCategory, string> = {
+  theft: "#38bdf8",
+  assault: "#ef4444",
+  cybercrime: "#a78bfa",
+  harassment: "#f59e0b",
+  property_damage: "#f97316",
+  other: "#94a3b8",
 };
 
 export const PRIORITY_LABEL: Record<ComplaintPriority, string> = {

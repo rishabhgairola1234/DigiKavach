@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Siren, Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
 import { sendSosAlert } from "./sos-actions";
+import { Bilingual } from "@/components/bilingual";
 
 type SosState = "idle" | "locating" | "sending" | "sent" | "error";
 
@@ -52,9 +53,13 @@ export function SosButton() {
     return (
       <div className="pop-in flex flex-col items-center gap-1.5 rounded-2xl border border-priority-low/40 bg-priority-low/10 px-6 py-5 text-center">
         <CheckCircle2 className="h-8 w-8 text-priority-low" />
-        <p className="font-semibold text-foreground">
-          Alert sent — help is on the way
-        </p>
+        <Bilingual
+          as="p"
+          en="Alert sent — help is on the way"
+          hi="अलर्ट भेजा गया — मदद रास्ते में है"
+          className="font-semibold text-foreground"
+          hiClassName="block text-xs font-normal text-muted"
+        />
         <p className="text-sm text-muted">
           Your location has been shared with the response team.
         </p>
@@ -62,7 +67,7 @@ export function SosButton() {
           onClick={() => setState("idle")}
           className="mt-1 text-xs text-muted underline transition-colors hover:text-foreground"
         >
-          Send another alert
+          <Bilingual en="Send another alert" hi="एक और अलर्ट भेजें" />
         </button>
       </div>
     );
@@ -87,13 +92,19 @@ export function SosButton() {
       </button>
 
       <div className="text-center">
-        <p className="text-sm font-semibold text-foreground">
-          {state === "locating"
-            ? "Getting your location..."
-            : state === "sending"
-              ? "Sending alert..."
-              : "SOS Alert"}
-        </p>
+        {state === "locating" || state === "sending" ? (
+          <p className="text-sm font-semibold text-foreground">
+            {state === "locating" ? "Getting your location..." : "Sending alert..."}
+          </p>
+        ) : (
+          <Bilingual
+            as="p"
+            en="SOS Alert"
+            hi="एसओएस अलर्ट"
+            className="text-sm font-semibold text-foreground"
+            hiClassName="block text-xs font-normal text-muted"
+          />
+        )}
         {state === "idle" && (
           <p className="text-xs text-muted">
             Notifies the response team with your location
@@ -109,7 +120,7 @@ export function SosButton() {
             onClick={handleClick}
             className="text-xs font-medium text-priority-high underline transition-colors hover:text-priority-high/80"
           >
-            Try again
+            <Bilingual en="Try again" hi="पुनः प्रयास करें" />
           </button>
         </div>
       )}

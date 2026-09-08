@@ -1,16 +1,44 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { FileText, Paperclip, ArrowLeft, Loader2, X } from "lucide-react";
+import { FileText, Paperclip, ArrowLeft, Loader2, X, AlertTriangle } from "lucide-react";
 import { Field } from "@/components/auth/field";
-import { fileComplaint, type FileComplaintState } from "./actions";
+import { formatRelativeTime } from "@/lib/time";
+import { VoiceInputButton } from "./voice-input-button";
+import { Bilingual } from "@/components/bilingual";
+import {
+  fileComplaint,
+  checkForDuplicateComplaint,
+  type FileComplaintState,
+} from "./actions";
 
 const initialState: FileComplaintState = { error: null };
 
 export function ComplaintForm() {
   const [state, formAction, pending] = useActionState(fileComplaint, initialState);
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [description, setDescription] = useState("");
+  const [duplicateWarning, setDuplicateWarning] = useState<{
+    title: string;
+    createdAt: string;
+  } | null>(null);
+  const [, startDuplicateCheck] = useTransition();
+  const formRef = useRef<HTMLFormElement>(null);
+
+  function handleDescriptionBlur() {
+    if (!formRef.current) return;
+    const formData = new FormData(formRef.current);
+    const title = String(formData.get("title") || "").trim();
+    const description = String(formData.get("description") || "").trim();
+    const location = String(formData.get("location") || "").trim();
+    if (!title || !description) return;
+
+    startDuplicateCheck(async () => {
+      const result = await checkForDuplicateComplaint(title, description, location);
+      setDuplicateWarning(result.duplicate);
+    });
+  }
 
   return (
     <div className="flex flex-1 justify-center bg-background bg-grid px-6 py-16">
@@ -20,7 +48,7 @@ export function ComplaintForm() {
           className="mb-6 inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-foreground"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
-          Back to dashboard
+          <Bilingual en="Back to dashboard" hi="डैशबोर्ड पर वापस जाएं" />
         </Link>
 
         <div className="rounded-2xl border border-border bg-background-elevated p-8">
@@ -28,18 +56,23 @@ export function ComplaintForm() {
             <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-warm-accent/15 text-warm-accent">
               <FileText className="h-6 w-6" />
             </div>
-            <h1 className="text-2xl font-semibold text-foreground">
-              File a Complaint
-            </h1>
+            <Bilingual
+              as="h1"
+              en="File a Complaint"
+              hi="शिकायत दर्ज करें"
+              className="text-2xl font-semibold text-foreground"
+              hiClassName="block text-sm font-normal text-muted"
+            />
             <p className="mt-1 text-sm text-muted">
               Give us as much detail as you can — it helps investigators act
               faster.
             </p>
           </div>
 
-          <form action={formAction} className="flex flex-col gap-5">
+          <form ref={formRef} action={formAction} className="flex flex-col gap-5">
             <Field
               label="Complaint title"
+              labelHi="शिकायत का शीर्षक"
               name="title"
               type="text"
               focusClassName="focus:border-warm-accent"
@@ -48,18 +81,47 @@ export function ComplaintForm() {
             <label className="flex flex-col gap-1.5 text-sm">
               <span className="font-medium text-foreground">
                 Detailed description
+                <span className="ml-1.5 font-normal text-muted">विस्तृत विवरण</span>
+              </span>
+              <span className="text-xs text-muted">
+                आप हिंदी या अंग्रेज़ी में लिख सकते हैं — You can write this in
+                Hindi or English, whichever is easier.
               </span>
               <textarea
                 name="description"
                 required
                 rows={6}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                onBlur={handleDescriptionBlur}
                 placeholder="Describe what happened, who was involved, and anything else relevant..."
                 className="resize-none rounded-lg border border-border bg-background px-3 py-2.5 text-foreground outline-none transition-colors placeholder:text-muted focus:border-warm-accent"
               />
+              <VoiceInputButton currentValue={description} onChange={setDescription} />
             </label>
+
+            {duplicateWarning && (
+              <div className="pop-in flex items-start gap-2 rounded-lg border border-priority-medium/30 bg-priority-medium/10 px-3 py-2 text-sm text-priority-medium">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <p>
+                  You may have already filed a similar complaint:{" "}
+                  <span className="font-medium">&quot;{duplicateWarning.title}&quot;</span>,
+                  filed {formatRelativeTime(duplicateWarning.createdAt)} — you can still submit
+                  this as a separate report if it&apos;s a different incident.{" "}
+                  <button
+                    type="button"
+                    onClick={() => setDuplicateWarning(null)}
+                    className="font-medium underline transition-colors hover:text-priority-medium/80"
+                  >
+                    <Bilingual en="Dismiss" hi="खारिज करें" />
+                  </button>
+                </p>
+              </div>
+            )}
 
             <Field
               label="Incident date & time"
+              labelHi="घटना की तारीख और समय"
               name="incidentDatetime"
               type="datetime-local"
               focusClassName="focus:border-warm-accent"
@@ -67,6 +129,7 @@ export function ComplaintForm() {
 
             <Field
               label="Incident location"
+              labelHi="घटना का स्थान"
               name="location"
               type="text"
               focusClassName="focus:border-warm-accent"
@@ -75,6 +138,7 @@ export function ComplaintForm() {
             <label className="flex flex-col gap-1.5 text-sm">
               <span className="font-medium text-foreground">
                 Evidence (images or PDFs, optional)
+                <span className="ml-1.5 font-normal text-muted">साक्ष्य (वैकल्पिक)</span>
               </span>
               <div className="flex items-center gap-2 rounded-lg border border-dashed border-border bg-background px-3 py-3 text-muted transition-colors hover:border-warm-accent/50">
                 <Paperclip className="h-4 w-4 shrink-0" />
@@ -120,7 +184,11 @@ export function ComplaintForm() {
               className="mt-2 inline-flex items-center justify-center gap-2 rounded-lg bg-warm-accent px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-warm-accent/90 disabled:opacity-60"
             >
               {pending && <Loader2 className="fade-in h-4 w-4 shrink-0 animate-spin" />}
-              {pending ? "Filing complaint & analyzing details..." : "Submit complaint"}
+              {pending ? (
+                "Filing complaint & analyzing details..."
+              ) : (
+                <Bilingual en="Submit complaint" hi="शिकायत जमा करें" />
+              )}
             </button>
             {pending && (
               <p className="fade-in text-center text-xs text-muted">
